@@ -1,0 +1,20 @@
+{
+  "name": "dissemble",
+  "version": "1.0.0",
+  "description": "Disassembler for various 8-bit archtectures",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node build/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [],
+  "author": "angelo_wf",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,18 +1,32 @@
+import fs from "node:fs";
 import { Architecture, Config } from "./config.js";
 import { Disassembler } from "./disassembler.js";
+
+function readBinaryFile(path: string): Uint8Array {
+  let data = fs.readFileSync(path);
+  return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+}
+
+function writeOutput(path: string, data: string): void {
+  fs.writeFileSync(path, data, "utf-8");
+}
 
 let config: Config = {
   architecture: Architecture.M6502,
   fileOffset: 0,
-  offset: 0x8000,
-  length: 16,
+  offset: 0xc000,
+  length: 5,
   nonRom: {s: 0, e: 0x7fff},
-  codeStarts: [0x8000, 0x800a],
-  dataStarts: [{adr: 0x8006, off: 3}],
-  codeStops: [0x8010],
-  routineSkips: [{adr: 0x4000, skip: 1}]
+  codeStarts: [0xc000],
+  dataStarts: [],
+  codeStops: [],
+  routineSkips: []
 };
 
-let disassembler = new Disassembler(config, new Uint8Array([0xa9, 0x12, 0xea, 0x20, 0x06, 0x80, 0x4c, 0x00, 0x80, 0x00, 0x20, 0x00, 0x40, 0x12, 0x10, 0xfe]));
+let input = new Uint8Array([0xa9, 0x12, 0x4c, 0x00, 0xc0]);
 
-console.log(disassembler.disassemble());
+let disassembler = new Disassembler(config, input);
+
+let output = disassembler.disassemble();
+
+console.log(output);

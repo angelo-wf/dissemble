@@ -1,4 +1,4 @@
-import { Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
+import { ByteType, Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
 
 enum Am {
   IMP,
@@ -32,6 +32,17 @@ const opcodeStrings: string[] = [
   "bne","cmp","stp","dcp","nop","cmp","dec","dcp","cld","cmp","nop","dcp","nop","cmp","dec","dcp",
   "cpx","sbc","nop","isc","cpx","sbc","inc","isc","inx","sbc","nop","sbc","cpx","sbc","inc","isc",
   "beq","sbc","stp","isc","nop","sbc","inc","isc","sed","sbc","nop","isc","nop","sbc","inc","isc"
+];
+
+// only handle absoulte access (zp unlikely to be rom-labeled)
+const addressAccessModes: Am[] = [
+  Am.ABS, Am.ABX, Am.ABY
+];
+
+// TODO: undocumented writing opcodes
+const writingOpcodes: string[] = [
+  "sta", "stx", "sty",
+  "asl", "ror", "lsr", "ror", "dec", "inc"
 ];
 
 const opcodeModes: Am[] = [
@@ -109,9 +120,14 @@ export class M6502Handler implements OpcodeHandler {
     let cont = true;
 
     let opcode = bytes[0]!;
+    if(opcodeTypes[opcode]! > 0) {
+      this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+    }
+
     if([0x10, 0x30, 0x50, 0x70, 0x90, 0xb0, 0xd0, 0xf0].includes(opcode)) {
       // branch, add target as start
       this.dis.addStart(this.getBranchTarget(pc, bytes[1]!), pc, true);
+      return true;
     }
     if(opcode === 0x20) {
       // jsr, add address as start, handle skip bytes
@@ -119,26 +135,37 @@ export class M6502Handler implements OpcodeHandler {
       this.dis.addStart(adr, pc, true);
       let skip = this.dis.getSkipCount(adr);
       if(skip !== undefined) {
-        cont = false;
         if(skip !== 0) {
           this.dis.addStart(pc + 3 + skip, pc, false);
         }
+        return false;
       }
+      return true;
     }
     if(opcode === 0x40 || opcode === 0x60) {
       // rti/rts, stop tracing
-      cont = false;
+      return false;
     }
     if(opcode === 0x4c) {
       // jmp abs, add address as start, stop tracing
       let adr = this.asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
-      cont = false;
+      return false;
     }
     if(opcode === 0x6c) {
       // jmp ind, warn and stop tracing
       this.dis.logWarning(`Indirect jump at $${hexStr(pc, 16)}`);
-      cont = false;
+      return false;
+    }
+
+    let mode = opcodeModes[opcode]!;
+    if(addressAccessModes.includes(mode)) {
+      let adr = this.asWord(bytes[1]!, bytes[2]!);
+      let type = this.dis.getByteInfo(adr).type;
+      if(writingOpcodes.includes(opcodeStrings[opcode]!) && type !== ByteType.NON_ROM) {
+        this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
+      }
+      this.dis.addLabel(adr, pc);
     }
 
     return cont;
@@ -148,6 +175,10 @@ export class M6502Handler implements OpcodeHandler {
     let opcode = bytes[0]!;
     let opString = opcodeStrings[opcode]!;
     let opMode = opcodeModes[opcode]!;
+
+    // TODO: handle repeat encodings (output with .db/.dw?)
+    // TODO: handle outputtting ZP in unique way ('<'?) (and how to handle with future low/high-byte table output?)
+    // TODO: handle absolute versions for zp+abs opcodes with address below 256
     
     switch(opMode) {
       case Am.IMP: return `${opString}`;

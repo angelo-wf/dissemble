@@ -1,3 +1,5 @@
+import { M6502Handler } from "./architectures/m6502.js";
+import { Architecture, Config } from "./config.js";
 
 export enum ByteType {
   UNKNOWN,
@@ -15,18 +17,8 @@ export type ByteInfo = {
 export interface OpcodeHandler {
   // Assumes 2 bytes to be enough to determine opcode length
   getOpcodeLength(byte1: number, byte2: number): number;
-
-  traceOpcode(...bytes: number[]): boolean;
-}
-
-// TEMP to allow to compile
-class TestHandler implements OpcodeHandler {
-  getOpcodeLength(byte1: number, byte2: number): number {
-    return 1;
-  }
-  traceOpcode(...bytes: number[]): boolean {
-    return true;
-  }
+  traceOpcode(pc: number, ...bytes: number[]): boolean;
+  disassembleOpcode(pc: number, ...bytes: number[]): string;
 }
 
 export function hexStr(val: number, size: number): string {
@@ -36,6 +28,9 @@ export function hexStr(val: number, size: number): string {
 export class Disassembler {
 
   private opcodeHandler: OpcodeHandler;
+
+  private mapOffset: number = 0;
+  private mapLength: number = 0;
 
   private byteInfo: ByteInfo[] = [];
   private data: Uint8Array = new Uint8Array(0x10000);
@@ -47,8 +42,44 @@ export class Disassembler {
 
   private codeStarts: number[] = [];
 
-  constructor() {
-    this.opcodeHandler = new TestHandler();
+  constructor(config: Config, data: Uint8Array) {
+    // parse config
+
+    // copy data to correct spot
+    for(let i = 0; i < config.length; i++) {
+      this.data[config.offset + i] = data[config.fileOffset + i]!;
+    }
+    this.mapOffset = config.offset;
+    this.mapLength = config.length;
+    // create initial byteInfo
+    for(let i = 0; i < 0x10000; i++) {
+      if(i >= config.offset && i < config.offset + config.length) {
+        this.byteInfo[i] = {type: ByteType.UNKNOWN};
+      } else if(config.nonRom && i >= config.nonRom.s && i <= config.nonRom.e) {
+        this.byteInfo[i] = {type: ByteType.NON_ROM};
+      } else {
+        this.byteInfo[i] = {type: ByteType.UNMAPPED};
+      }
+    }
+    // create starts/labels
+    for(let start of config.codeStarts) {
+      this.codeStarts.push(start);
+      this.labels.set(start, 0);
+    }
+    for(let start of config.dataStarts) {
+      this.labels.set(start.adr, start.off ?? 0);
+      if(start.off) this.labels.set(start.adr + start.off, 0);
+    }
+    for(let stop of config.codeStops) {
+      this.byteInfo[stop]!.type = ByteType.DATA;
+    }
+    for(let skip of config.routineSkips) {
+      this.routineSkips.set(skip.adr, skip.skip);
+    }
+    // create opcode handler according to arch
+    switch(config.architecture) {
+      case Architecture.M6502: this.opcodeHandler = new M6502Handler(this);
+    }
   }
 
   disassemble(): string {
@@ -108,27 +139,29 @@ export class Disassembler {
       opBytes.push(this.data[pc + i]!);
     }
 
-    let cont = this.opcodeHandler.traceOpcode(...opBytes);
-    return cont ? pc + length : undefined;
+    let cont = this.opcodeHandler.traceOpcode(pc, ...opBytes);
+    return cont ? length : undefined;
   }
 
-  addLabel(pc: number): void {
-    if(this.labels.has(pc)) {
-      if(this.labels.get(pc) !== 0) {
-        this.logWarning("Direct label wanted for label with offset");
-      }
-    } else {
+  addLabel(pc: number, origLoc: number): void {
+    if(this.byteInfo[pc]!.type === ByteType.NON_ROM) return;
+    if(this.byteInfo[pc]!.type === ByteType.UNMAPPED) {
+      this.logWarning(`Access to unmapped area at $${hexStr(pc, 16)} from $${hexStr(origLoc, 16)}`);
+      return;
+    }
+    if(!this.labels.has(pc)) {
       this.labels.set(pc, 0);
     }
   }
 
-  addStart(pc: number, origLoc: number): void {
+  addStart(pc: number, origLoc: number, label: boolean): void {
     let info = this.byteInfo[pc]!;
     let pcStr = hexStr(pc, 16);
     let locStr = hexStr(origLoc, 16);
     if(info.type === ByteType.NON_ROM) return this.logWarning(`Jump to $${pcStr} in non-rom area from $${locStr}`);
     if(info.type === ByteType.UNMAPPED) return this.logWarning(`Jump to $${pcStr} outside mapped area from $${locStr}`);
     if(info.type === ByteType.DATA) return this.logWarning(`Jump to explicit stop $${pcStr} from $${locStr}`);
+    if(label) this.addLabel(pc, origLoc);
     this.codeStarts.push(pc);
   }
 
@@ -136,8 +169,66 @@ export class Disassembler {
     console.log(warning);
   }
 
+  getAdrRef(adr: number, byte: boolean): string {
+    if(this.labels.has(adr)) {
+      let lbl;
+      let skip = this.labels.get(adr)!;
+      if(skip != 0) {
+        let actLabel = adr + skip;
+        lbl = `_${hexStr(actLabel, 16)} ${skip > 0 ? "-" : "+"} ${Math.abs(skip)}`;
+      } else {
+        lbl = `_${hexStr(adr, 16)}`;
+      }
+      return lbl;
+    }
+    return `$${hexStr(adr, byte ? 8 : 16)}`;
+  }
+
+  getSkipCount(adr: number): number | undefined {
+    return this.routineSkips.get(adr);
+  }
+
+  getByteInfo(adr: number): ByteInfo {
+    return this.byteInfo[adr]!;
+  }
+
   private writeDisassembly(): string {
-    let output = "";
+    let pc = this.mapOffset;
+    let output = `.org $${hexStr(pc, 16)}\n\n`;
+
+    while(pc < this.mapOffset + this.mapLength) {
+      if(this.labels.get(pc) === 0) {
+        output += `_${hexStr(pc, 16)}:\n`;
+      }
+      let type = this.byteInfo[pc]!.type;
+      if(type === ByteType.CODE_S) {
+        let length = this.opcodeHandler.getOpcodeLength(this.data[pc]!, this.data[pc + 1] ?? 0);
+        // check for labels during opcode, put them using equals
+        let opcodeBytes: number[] = [this.data[pc]!];
+        for(let i = 1; i < length; i++) {
+          if(this.labels.get(pc + i) === 0) {
+            output += `_${hexStr(pc + i, 16)} = * + ${i}\n`;
+          }
+          opcodeBytes.push(this.data[pc + i]!);
+        }
+        // then emit opcode
+        output += `  ${this.opcodeHandler.disassembleOpcode(pc, ...opcodeBytes)}\n`;
+        pc += length;
+      } else {
+        // print first byte
+        output += `  .db $${hexStr(this.data[pc]!, 8)}`;
+        pc++;
+        // and print up to 7 more, provided no labels or opcode starts
+        for(let i = 0; i < 7; i++) {
+          if(this.labels.get(pc) === 0 || pc >= this.mapOffset + this.mapLength || this.byteInfo[pc]!.type === ByteType.CODE_S) {
+            break;
+          }
+          output += `, $${hexStr(this.data[pc]!, 8)}`;
+          pc++;
+        }
+        output += "\n";
+      }
+    }
 
     return output;
   }

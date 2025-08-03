@@ -1,6 +1,6 @@
 # Dissemble
 
-A very WIP disassembler (currently) supporting nothing, written in TypeScript.
+A very WIP disassembler (currently) supporting the 6502, written in TypeScript.
 
 ## Compilng and running
 

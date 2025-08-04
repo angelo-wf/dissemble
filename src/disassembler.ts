@@ -181,15 +181,15 @@ export class Disassembler {
       }
       return lbl;
     }
-    return `$${hexStr(adr, byte ? 8 : 16)}`;
+    return `${byte ? "<" : ""}$${hexStr(adr, byte ? 8 : 16)}`;
   }
 
   getSkipCount(adr: number): number | undefined {
     return this.routineSkips.get(adr);
   }
 
-  getByteInfo(adr: number): ByteInfo {
-    return this.byteInfo[adr]!;
+  isRomArea(adr: number): boolean {
+    return this.byteInfo[adr]!.type !== ByteType.NON_ROM;
   }
 
   private writeDisassembly(): string {

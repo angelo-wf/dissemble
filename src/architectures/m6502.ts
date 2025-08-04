@@ -1,4 +1,4 @@
-import { ByteType, Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
+import { Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
 
 enum Am {
   IMP,
@@ -39,10 +39,26 @@ const addressAccessModes: Am[] = [
   Am.ABS, Am.ABX, Am.ABY
 ];
 
-// TODO: undocumented writing opcodes
 const writingOpcodes: string[] = [
-  "sta", "stx", "sty",
-  "asl", "ror", "lsr", "ror", "dec", "inc"
+  "sta", "stx", "sty", "sax",
+  "asl", "ror", "lsr", "ror", "dec", "inc",
+  "slo", "rla", "sre", "rra", "dcp", "isc"
+];
+
+// opcodes with absolute and zp forms, for detecting absolute form with argument below 0x100
+const absOpcodeZpForm: string[] = [
+  "ora", "and", "eor", "adc", "lda", "sta", "cmp", "sbc",
+  "asl", "rol", "lsr", "ror", "stx", "ldx", "dec", "inc",
+  "bit", "sty", "ldy", "cpy", "cpx", "nop",
+  "slo", "rla", "sre", "rra", "sax", "lax", "dcp", "isc"
+];
+const abxOpcodeZpForm: string[] = [
+  "ora", "and", "eor", "adc", "lda", "sta", "cmp", "sbc",
+  "asl", "rol", "lsr", "ror", "dec", "inc", "ldy",
+  "slo", "rla", "sre", "rra", "dcp", "isc", "nop"
+];
+const abyOpcodeZpForm: string[] = [
+  "ldx", "lax"
 ];
 
 const opcodeModes: Am[] = [
@@ -161,8 +177,7 @@ export class M6502Handler implements OpcodeHandler {
     let mode = opcodeModes[opcode]!;
     if(addressAccessModes.includes(mode)) {
       let adr = this.asWord(bytes[1]!, bytes[2]!);
-      let type = this.dis.getByteInfo(adr).type;
-      if(writingOpcodes.includes(opcodeStrings[opcode]!) && type !== ByteType.NON_ROM) {
+      if(writingOpcodes.includes(opcodeStrings[opcode]!) && this.dis.isRomArea(adr)) {
         this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
       }
       this.dis.addLabel(adr, pc);
@@ -175,24 +190,47 @@ export class M6502Handler implements OpcodeHandler {
     let opcode = bytes[0]!;
     let opString = opcodeStrings[opcode]!;
     let opMode = opcodeModes[opcode]!;
+    let len = this.getLengthForMode(opMode);
 
-    // TODO: handle repeat encodings (output with .db/.dw?)
-    // TODO: handle outputtting ZP in unique way ('<'?) (and how to handle with future low/high-byte table output?)
-    // TODO: handle absolute versions for zp+abs opcodes with address below 256
-    
-    switch(opMode) {
-      case Am.IMP: return `${opString}`;
-      case Am.IMM: return `${opString} #$${hexStr(bytes[1]!, 8)}`;
-      case Am.ZPG: return `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}`;
-      case Am.ZPX: return `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}, x`;
-      case Am.ZPY: return `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}, y`;
-      case Am.IZX: return `${opString} (${this.dis.getAdrRef(bytes[1]!, true)}, x)`;
-      case Am.IZY: return `${opString} (${this.dis.getAdrRef(bytes[1]!, true)}), y`;
-      case Am.ABS: return `${opString} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}`;
-      case Am.ABX: return `${opString} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}, x`;
-      case Am.ABY: return `${opString} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}, y`;
-      case Am.IND: return `${opString} (${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)})`;
-      case Am.REL: return `${opString} ${this.dis.getAdrRef(this.getBranchTarget(pc, bytes[1]!), false)}`;
+    let outString = "";
+    let suffix = "";
+
+    if(len === 3) {
+      let word = this.asWord(bytes[1]!, bytes[2]!);
+      if(opMode === Am.ABS && absOpcodeZpForm.includes(opString) && word < 0x100) {
+        suffix = ".a";
+      }
+      if(opMode === Am.ABX && abxOpcodeZpForm.includes(opString) && word < 0x100) {
+        suffix = ".a";
+      }
+      if(opMode === Am.ABY && abyOpcodeZpForm.includes(opString) && word < 0x100) {
+        suffix = ".a";
+      }
     }
+
+    switch(opMode) {
+      case Am.IMP: outString = `${opString}`; break;
+      case Am.IMM: outString = `${opString} #$${hexStr(bytes[1]!, 8)}`; break;
+      case Am.ZPG: outString = `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}`; break;
+      case Am.ZPX: outString = `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}, x`; break;
+      case Am.ZPY: outString = `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}, y`; break;
+      case Am.IZX: outString = `${opString} (${this.dis.getAdrRef(bytes[1]!, true)}, x)`; break;
+      case Am.IZY: outString = `${opString} (${this.dis.getAdrRef(bytes[1]!, true)}), y`; break;
+      case Am.ABS: outString = `${opString}${suffix} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}`; break;
+      case Am.ABX: outString = `${opString}${suffix} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}, x`; break;
+      case Am.ABY: outString = `${opString}${suffix} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}, y`; break;
+      case Am.IND: outString = `${opString} (${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)})`; break;
+      case Am.REL: outString = `${opString} ${this.dis.getAdrRef(this.getBranchTarget(pc, bytes[1]!), false)}`; break;
+    }
+
+    if(opcodeTypes[opcode]! === 2) {
+      // repeat encoding, output as db/dw statements
+      let out = `.db $${hexStr(opMode, 8)} ; ${outString}`;
+      if(len > 1) {
+        out += len === 3 ? `\n  .dw $${hexStr(this.asWord(bytes[1]!, bytes[2]!), 16)}` : `\n  .db $${hexStr(bytes[1]!, 8)}`;
+      }
+      return out;
+    }
+    return outString;
   }
 }

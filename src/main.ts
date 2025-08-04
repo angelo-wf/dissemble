@@ -11,19 +11,19 @@ function writeOutput(path: string, data: string): void {
   fs.writeFileSync(path, data, "utf-8");
 }
 
+let input = new Uint8Array([0x8d, 0x34, 0x12, 0x8d, 0x12, 0x00, 0x85, 0x12]);
+
 let config: Config = {
   architecture: Architecture.M6502,
   fileOffset: 0,
   offset: 0xc000,
-  length: 5,
+  length: input.length,
   nonRom: {s: 0, e: 0x7fff},
   codeStarts: [0xc000],
   dataStarts: [],
   codeStops: [],
   routineSkips: []
 };
-
-let input = new Uint8Array([0xa9, 0x12, 0x4c, 0x00, 0xc0]);
 
 let disassembler = new Disassembler(config, input);
 

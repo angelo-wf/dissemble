@@ -1,5 +1,5 @@
 import { M6502Handler } from "./architectures/m6502.js";
-import { Architecture, Config } from "./config.js";
+import { AdrType, Architecture, Config } from "./config.js";
 
 export enum ByteType {
   UNKNOWN,
@@ -43,8 +43,6 @@ export class Disassembler {
   private codeStarts: number[] = [];
 
   constructor(config: Config, data: Uint8Array) {
-    // parse config
-
     // copy data to correct spot
     for(let i = 0; i < config.length; i++) {
       this.data[config.offset + i] = data[config.fileOffset + i]!;
@@ -62,19 +60,31 @@ export class Disassembler {
       }
     }
     // create starts/labels
-    for(let start of config.codeStarts) {
-      this.codeStarts.push(start);
-      this.labels.set(start, 0);
-    }
-    for(let start of config.dataStarts) {
-      this.labels.set(start.adr, start.off ?? 0);
-      if(start.off) this.labels.set(start.adr + start.off, 0);
-    }
-    for(let stop of config.codeStops) {
-      this.byteInfo[stop]!.type = ByteType.DATA;
-    }
-    for(let skip of config.routineSkips) {
-      this.routineSkips.set(skip.adr, skip.skip);
+    for(let adr of config.addresses) {
+      switch(adr.t) {
+        case AdrType.START: {
+          let offset = adr.off ?? 0;
+          let actAdr = adr.adr + offset;
+          this.codeStarts.push(actAdr);
+          this.labels.set(adr.adr, offset);
+          if(offset) this.labels.set(actAdr, 0);
+          break;
+        }
+        case AdrType.DATA: {
+          let offset = adr.off ?? 0;
+          this.labels.set(adr.adr, offset);
+          if(offset) this.labels.set(adr.adr + offset, 0);
+          break;
+        }
+        case AdrType.STOP: {
+          this.byteInfo[adr.adr]!.type = ByteType.DATA;
+          break;
+        }
+        case AdrType.SKIP: {
+          this.routineSkips.set(adr.adr, adr.skip);
+          break;
+        }
+      }
     }
     // create opcode handler according to arch
     switch(config.architecture) {

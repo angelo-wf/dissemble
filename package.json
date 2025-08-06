@@ -13,6 +13,9 @@
   "author": "angelo_wf",
   "license": "MIT",
   "type": "module",
+  "dependencies": {
+    "json5": "^2.2.3"
+  },
   "devDependencies": {
     "@types/node": "^24.1.0",
     "typescript": "^5.8.3"

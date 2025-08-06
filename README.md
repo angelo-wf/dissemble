@@ -1,6 +1,6 @@
 # Dissemble
 
-A very WIP disassembler (currently) supporting the 6502, written in TypeScript.
+A very WIP tracing disassembler (currently) supporting the 6502, written in TypeScript.
 
 ## Compilng and running
 
@@ -12,6 +12,54 @@ Compile:
 
 Run:
 - `node build/main.js` (or `npm start --` to compile as well)
+
+## Usage
+
+The disassembler takes three arguments:
+- The path to the file to disassemble
+- The path to the output file to write
+- The path to the config file to use
+
+The config file is a [JSON5](https://json5.org) file, that describes how to handle disassembly.
+JSON5 is used to make editing directly easier, due to support for comments and hexadecimal numbers.
+Example:
+```javascript
+{
+  // Architecture to use, only 'm6502' is currently supported
+  architecture: "m6502",
+  // Offset in file to start loading from
+  fileOffset: 0x10,
+  // Location in address space to load to
+  offset: 0xc000,
+  // Amount of bytes to load
+  length: 0x4000,
+  // Optional, indicates that addresses s to e (inclusive) are RAM (or otherwise not ROM), so expected to be written.
+  nonRom: {s: 0, e: 0x7fff},
+  // List of addresses to handle
+  addresses: [
+    // Indicates to start disassembly from this address
+    {t: "start", adr: 0xc000},
+    // Indicates to stop assembly when this address is traced to (e.g. to handle 'branch always' situations)
+    {t: "stop", adr: 0xc183},
+    // Indicates to place a label at address. If off is provided as well,
+    // indicates that the label should be at adr + off, and references to use label - off
+    // (e.g. for data accessed with an offset, to prevent these labels to be placed at the wrong spot)
+    {t: "data", adr: 0xc231},
+    {t: "data", adr: 0xc532, off: 12},
+    // Indicates that when the subroutine at adr is called, it should skip that amount of bytes.
+    // 0 indicates that the call does not return at all and to stop disassemly there
+    // (e.g. for routines that modify the return address on the stack)
+    {t: "skip", adr: 0xd103, skip: 0},
+    {t: "skip", adr: 0xc342, skip: 2}
+  ]
+}
+```
+
+The disassembler will trace from the given starts to use, following jumps, calls and branches, and stopping at returns.
+Labels will be emitted for jump/branch targets and subroutines, as well as data locations.
+It can not handle dynamic jumps, and will emit a warning when these are encountered.
+No labels will be generated for locations outside the disassembled area, and the output should directly reassemble.
+Warning are thrown for various cases, like accesses to outside the mapped area or writes to ROM.
 
 ## License
 

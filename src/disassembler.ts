@@ -63,11 +63,8 @@ export class Disassembler {
     for(let adr of config.addresses) {
       switch(adr.t) {
         case AdrType.START: {
-          let offset = adr.off ?? 0;
-          let actAdr = adr.adr + offset;
-          this.codeStarts.push(actAdr);
-          this.labels.set(adr.adr, offset);
-          if(offset) this.labels.set(actAdr, 0);
+          this.codeStarts.push(adr.adr);
+          this.labels.set(adr.adr, 0);
           break;
         }
         case AdrType.DATA: {

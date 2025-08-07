@@ -7,7 +7,9 @@ export enum AdrType {
   START = "start",
   STOP = "stop",
   DATA = "data",
-  SKIP = "skip"
+  SKIP = "skip",
+  POINTERS = "pointers",
+  TABLE = "table"
 };
 
 export type AdrDef = {
@@ -21,6 +23,11 @@ export type AdrDef = {
 } | {
   t: AdrType.SKIP,
   skip: number
+} | {
+  t: AdrType.POINTERS | AdrType.TABLE,
+  count: number,
+  adrh?: number,
+  off?: number
 });
 
 export type Config = {
@@ -90,6 +97,13 @@ export function parseConfig(input: any): Config {
     } else if(t === AdrType.SKIP) {
       let skip = checkIntNumber(item, "skip");
       parsedItem = {t, adr, skip};
+    } else if(t === AdrType.POINTERS || t === AdrType.TABLE) {
+      let count = checkIntNumber(item, "count");
+      let adrh: number | undefined = undefined;
+      if(item.adrh) adrh = checkIntNumber(item, "adrh");
+      let off: number | undefined = undefined;
+      if(item.off) off = checkIntNumber(item, "off");
+      parsedItem = {t, adr, count, adrh, off};
     } else {
       parsedItem = {t, adr};
     }

@@ -225,7 +225,7 @@ export class M6502Handler implements OpcodeHandler {
 
     if(opcodeTypes[opcode]! === 2) {
       // repeat encoding, output as db/dw statements
-      let out = `.db $${hexStr(opMode, 8)} ; ${outString}`;
+      let out = `.db $${hexStr(opcode, 8)} ; ${outString}`;
       if(len > 1) {
         out += len === 3 ? `\n  .dw $${hexStr(this.asWord(bytes[1]!, bytes[2]!), 16)}` : `\n  .db $${hexStr(bytes[1]!, 8)}`;
       }

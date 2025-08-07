@@ -22,7 +22,7 @@ The disassembler takes three arguments:
 
 The config file is a [JSON5](https://json5.org) file, that describes how to handle disassembly.
 JSON5 is used to make editing directly easier, due to support for comments and hexadecimal numbers.
-Example:
+Example (format not final):
 ```javascript
 {
   // Architecture to use, only 'm6502' is currently supported
@@ -50,7 +50,15 @@ Example:
     // 0 indicates that the call does not return at all and to stop disassemly there
     // (e.g. for routines that modify the return address on the stack)
     {t: "skip", adr: 0xd103, skip: 0},
-    {t: "skip", adr: 0xc342, skip: 2}
+    {t: "skip", adr: 0xc342, skip: 2},
+    // Indicate a table of count subroutine pointers at adr, each a word, each of which will be disassembled from.
+    // If adrh is specified, idicates a table split in low and high bytes instead, with the high bytes at adrh.
+    // If off is specified, indicates that the values in the table need this offset for the actual locations
+    {t: "pointers", adr: 0xd543, count: 5},
+    {t: "pointers", adr: 0xd571, adrh: 0xd579, count: 8, off: 1},
+    // Indicates a table of data pointers. Format is further the same as for subroutine pointers
+    {t: "table", adr: 0xd672, count: 4, off: 1},
+    {t: "table", adr: 0xd712, adrh: 0xd716, count: 4}
   ]
 }
 ```

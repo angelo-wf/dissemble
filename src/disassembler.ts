@@ -81,6 +81,33 @@ export class Disassembler {
           this.routineSkips.set(adr.adr, adr.skip);
           break;
         }
+        case AdrType.POINTERS: case AdrType.TABLE: {
+          let offset = adr.off ?? 0;
+          let hasAdrh = adr.adrh !== undefined;
+          for(let i = 0; i < adr.count; i++) {
+            let target: number;
+            if(!hasAdrh) {
+              target = this.data[adr.adr + i * 2]! | (this.data[adr.adr + i * 2 + 1]! << 8);
+            } else {
+              target = this.data[adr.adr + i]! | (this.data[adr.adrh! + i]! << 8);
+            }
+            let valid = this.checkLabelAdd(target, adr.adr + i * (hasAdrh ? 1 : 2));
+            if(valid) {
+              this.labels.set(target, offset);
+              if(offset) this.labels.set(target + offset, 0);
+            }
+            if(adr.t === AdrType.POINTERS) {
+              this.addStart(target + offset, adr.adr + i * (hasAdrh ? 1 : 2), false);
+            }
+          }
+          this.labels.set(adr.adr, 0);
+          if(!hasAdrh) {
+            this.labels.set(adr.adr + 1, -1);
+          } else {
+            this.labels.set(adr.adrh!, 0);
+          }
+          break;
+        }
       }
     }
     // create opcode handler according to arch
@@ -150,12 +177,17 @@ export class Disassembler {
     return cont ? length : undefined;
   }
 
-  addLabel(pc: number, origLoc: number): void {
-    if(this.byteInfo[pc]!.type === ByteType.NON_ROM) return;
+  private checkLabelAdd(pc: number, origLoc: number): boolean {
+    if(this.byteInfo[pc]!.type === ByteType.NON_ROM) return false;
     if(this.byteInfo[pc]!.type === ByteType.UNMAPPED) {
       this.logWarning(`Access to unmapped area at $${hexStr(pc, 16)} from $${hexStr(origLoc, 16)}`);
-      return;
+      return false;
     }
+    return true;
+  }
+
+  addLabel(pc: number, origLoc: number): void {
+    if(!this.checkLabelAdd(pc, origLoc)) return;
     if(!this.labels.has(pc)) {
       this.labels.set(pc, 0);
     }

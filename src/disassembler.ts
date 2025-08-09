@@ -7,11 +7,20 @@ export enum ByteType {
   NON_ROM,
   CODE_S,
   CODE_P,
-  DATA
+  DATA,
+  DATA_LB,
+  DATA_HB,
+  DATA_LW,
+  DATA_HW
 };
 
+const dataTableTypes: ByteType[] = [
+  ByteType.DATA_LB, ByteType.DATA_HB, ByteType.DATA_LW, ByteType.DATA_HW
+];
+
 export type ByteInfo = {
-  type: ByteType
+  type: ByteType,
+  word?: number
 };
 
 export interface OpcodeHandler {
@@ -87,9 +96,15 @@ export class Disassembler {
           for(let i = 0; i < adr.count; i++) {
             let target: number;
             if(!hasAdrh) {
+              this.byteInfo[adr.adr + i * 2]!.type = ByteType.DATA_LW;
+              this.byteInfo[adr.adr + i * 2 + 1]!.type = ByteType.DATA_HW;
               target = this.data[adr.adr + i * 2]! | (this.data[adr.adr + i * 2 + 1]! << 8);
             } else {
+              this.byteInfo[adr.adr + i]!.type = ByteType.DATA_LB;
+              this.byteInfo[adr.adrh! + i]!.type = ByteType.DATA_HB;
               target = this.data[adr.adr + i]! | (this.data[adr.adrh! + i]! << 8);
+              this.byteInfo[adr.adr + i]!.word = target;
+              this.byteInfo[adr.adrh! + i]!.word = target;
             }
             let valid = this.checkLabelAdd(target, adr.adr + i * (hasAdrh ? 1 : 2));
             if(valid) {
@@ -160,6 +175,10 @@ export class Disassembler {
         this.logWarning(`Opcode start within opcode at $${hexStr(pc + i, 16)}`);
         return undefined;
       }
+      if(dataTableTypes.includes(info.type)) {
+        if(i > 0) this.logWarning(`Pointer table within opcode at $${hexStr(pc + i, 16)}`);
+        return undefined;
+      }
       if(info.type === ByteType.DATA) {
         if(i > 0) this.logWarning(`Explcit stop within opcode at $${hexStr(pc + i, 16)}`);
         return undefined;
@@ -200,6 +219,7 @@ export class Disassembler {
     if(info.type === ByteType.NON_ROM) return this.logWarning(`Jump to $${pcStr} in non-rom area from $${locStr}`);
     if(info.type === ByteType.UNMAPPED) return this.logWarning(`Jump to $${pcStr} outside mapped area from $${locStr}`);
     if(info.type === ByteType.DATA) return this.logWarning(`Jump to explicit stop $${pcStr} from $${locStr}`);
+    if(dataTableTypes.includes(info.type)) return this.logWarning(`Jump to within pointer table at $${pcStr} from $${locStr}`);
     if(label) this.addLabel(pc, origLoc);
     this.codeStarts.push(pc);
   }
@@ -231,6 +251,18 @@ export class Disassembler {
     return this.byteInfo[adr]!.type !== ByteType.NON_ROM;
   }
 
+  private getDataByte(byte: number, type: ByteType, word?: number): string {
+    if(type === ByteType.DATA_LB) {
+      let adr = (word! & 0xff00) | byte;
+      return this.getAdrRef(adr, false);
+    }
+    if(type === ByteType.DATA_HB) {
+      let adr = (word! & 0xff) | (byte << 8);
+      return this.getAdrRef(adr, false);
+    }
+    return `$${hexStr(byte, 8)}`;
+  }
+
   private writeDisassembly(): string {
     let pc = this.mapOffset;
     let output = `.org $${hexStr(pc, 16)}\n\n`;
@@ -239,7 +271,8 @@ export class Disassembler {
       if(this.labels.get(pc) === 0) {
         output += `_${hexStr(pc, 16)}:\n`;
       }
-      let type = this.byteInfo[pc]!.type;
+      let info = this.byteInfo[pc]!;
+      let type = info.type;
       if(type === ByteType.CODE_S) {
         let length = this.opcodeHandler.getOpcodeLength(this.data[pc]!, this.data[pc + 1] ?? 0);
         // check for labels during opcode, put them using equals
@@ -253,16 +286,29 @@ export class Disassembler {
         // then emit opcode
         output += `  ${this.opcodeHandler.disassembleOpcode(pc, ...opcodeBytes)}\n`;
         pc += length;
+      } else if(type === ByteType.DATA_LW) {
+        // check for label one spot ahead in word
+        if(this.labels.get(pc + 1) === 0) {
+          output += `_${hexStr(pc + 1, 16)} = * + ${1}\n`;
+        }
+        // emit word
+        let word = this.data[pc]! | (this.data[pc + 1]! << 8);
+        output += `  .dw ${this.getAdrRef(word, false)}\n`;
+        pc += 2;
       } else {
-        // print first byte
-        output += `  .db $${hexStr(this.data[pc]!, 8)}`;
+        // print first byte, or lb/hb of word for split table
+        let dir = ".db";
+        if(type === ByteType.DATA_LB) dir = ".dlb";
+        if(type === ByteType.DATA_HB) dir = ".dhb";
+        output += `  ${dir} ${this.getDataByte(this.data[pc]!, type, info.word)}`;
         pc++;
-        // and print up to 7 more, provided no labels or opcode starts
+        // and print up to 7 more, provided no labels or switch to different type
         for(let i = 0; i < 7; i++) {
-          if(this.labels.get(pc) === 0 || pc >= this.mapOffset + this.mapLength || this.byteInfo[pc]!.type === ByteType.CODE_S) {
+          let bInfo = this.byteInfo[pc]!;
+          if(this.labels.get(pc) === 0 || pc >= this.mapOffset + this.mapLength || bInfo.type !== type) {
             break;
           }
-          output += `, $${hexStr(this.data[pc]!, 8)}`;
+          output += `, ${this.getDataByte(this.data[pc]!, type, bInfo.word)}`;
           pc++;
         }
         output += "\n";

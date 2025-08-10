@@ -36,6 +36,8 @@ export type Config = {
   offset: number,
   length: number,
   nonRom?: {s: number, e: number},
+  ramLabels: boolean,
+  adrComments: boolean,
   addresses: AdrDef[];
 };
 
@@ -61,6 +63,12 @@ function checkIntNumber(obj: any, key: string): number {
   throw new ConfigError(`Field ${key} not a integer number`);
 }
 
+function checkBoolean(obj: any, key: string): boolean {
+  let value = obj[key];
+  if(typeof value === "boolean") return value;
+  throw new ConfigError(`Field ${key} not a boolean`);
+}
+
 function checkAdrType(obj: any, key: string): AdrType {
   let value = obj[key];
   if(typeof value === "string" && Object.values<string>(AdrType).includes(value)) {
@@ -75,6 +83,11 @@ export function parseConfig(input: any): Config {
   let fileOffset = checkIntNumber(input, "fileOffset");
   let offset = checkIntNumber(input, "offset");
   let length = checkIntNumber(input, "length");
+
+  let ramLabels = false;
+  if(input.ramLabels) ramLabels = checkBoolean(input, "ramLabels");
+  let adrComments = false;
+  if(input.adrComments) adrComments = checkBoolean(input, "adrComments");
 
   let nonRom: Config["nonRom"] = undefined;
   if(typeof input.nonRom === "object") {
@@ -110,5 +123,5 @@ export function parseConfig(input: any): Config {
     addresses.push(parsedItem);
   }
 
-  return {architecture, fileOffset, offset, length, nonRom, addresses};
+  return {architecture, fileOffset, offset, length, nonRom, ramLabels, adrComments, addresses};
 }

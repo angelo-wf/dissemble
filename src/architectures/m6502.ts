@@ -34,14 +34,13 @@ const opcodeStrings: string[] = [
   "beq","sbc","stp","isc","nop","sbc","inc","isc","sed","sbc","nop","isc","nop","sbc","inc","isc"
 ];
 
-// only handle absoulte access (zp unlikely to be rom-labeled)
 const addressAccessModes: Am[] = [
-  Am.ABS, Am.ABX, Am.ABY
+  Am.ZPG, Am.ZPX, Am.ZPY, Am.IZX, Am.IZY, Am.ABS, Am.ABX, Am.ABY
 ];
 
 const writingOpcodes: string[] = [
   "sta", "stx", "sty", "sax",
-  "asl", "ror", "lsr", "ror", "dec", "inc",
+  "asl", "rol", "lsr", "ror", "dec", "inc",
   "slo", "rla", "sre", "rra", "dcp", "isc"
 ];
 
@@ -176,7 +175,8 @@ export class M6502Handler implements OpcodeHandler {
 
     let mode = opcodeModes[opcode]!;
     if(addressAccessModes.includes(mode)) {
-      let adr = this.asWord(bytes[1]!, bytes[2]!);
+      let length = this.getLengthForMode(mode);
+      let adr = length === 3 ? this.asWord(bytes[1]!, bytes[2]!) : bytes[1]!;
       if(writingOpcodes.includes(opcodeStrings[opcode]!) && this.dis.isRomArea(adr)) {
         this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
       }

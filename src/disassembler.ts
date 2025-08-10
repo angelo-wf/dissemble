@@ -41,6 +41,9 @@ export class Disassembler {
   private mapOffset: number = 0;
   private mapLength: number = 0;
 
+  private ramLabels: boolean;
+  private adrComments: boolean;
+
   private byteInfo: ByteInfo[] = [];
   private data: Uint8Array = new Uint8Array(0x10000);
 
@@ -129,6 +132,9 @@ export class Disassembler {
     switch(config.architecture) {
       case Architecture.M6502: this.opcodeHandler = new M6502Handler(this);
     }
+    // set misc items
+    this.ramLabels = config.ramLabels;
+    this.adrComments = config.adrComments;
   }
 
   disassemble(): string {
@@ -197,7 +203,9 @@ export class Disassembler {
   }
 
   private checkLabelAdd(pc: number, origLoc: number): boolean {
-    if(this.byteInfo[pc]!.type === ByteType.NON_ROM) return false;
+    if(this.byteInfo[pc]!.type === ByteType.NON_ROM) {
+      return this.ramLabels;
+    }
     if(this.byteInfo[pc]!.type === ByteType.UNMAPPED) {
       this.logWarning(`Access to unmapped area at $${hexStr(pc, 16)} from $${hexStr(origLoc, 16)}`);
       return false;
@@ -267,12 +275,23 @@ export class Disassembler {
     let pc = this.mapOffset;
     let output = `.org $${hexStr(pc, 16)}\n\n`;
 
+    // emit all labels not within mapped area as equals
+    let labelEmitted = false;
+    for(let i = 0; i < 0x10000; i++) {
+      if((i < this.mapOffset || i >= this.mapOffset + this.mapLength) && this.labels.get(i) === 0) {
+        output += `_${hexStr(i, 16)} = $${hexStr(i, 16)}\n`;
+        labelEmitted = true;
+      }
+    }
+    output += labelEmitted ? "\n" : "";
+
     while(pc < this.mapOffset + this.mapLength) {
       if(this.labels.get(pc) === 0) {
         output += `_${hexStr(pc, 16)}:\n`;
       }
       let info = this.byteInfo[pc]!;
       let type = info.type;
+      let linePc = pc;
       if(type === ByteType.CODE_S) {
         let length = this.opcodeHandler.getOpcodeLength(this.data[pc]!, this.data[pc + 1] ?? 0);
         // check for labels during opcode, put them using equals
@@ -280,20 +299,22 @@ export class Disassembler {
         for(let i = 1; i < length; i++) {
           if(this.labels.get(pc + i) === 0) {
             output += `_${hexStr(pc + i, 16)} = * + ${i}\n`;
+            this.logWarning(`Label wanted within opcode at $${hexStr(pc + i, 16)}`);
           }
           opcodeBytes.push(this.data[pc + i]!);
         }
         // then emit opcode
-        output += `  ${this.opcodeHandler.disassembleOpcode(pc, ...opcodeBytes)}\n`;
+        output += `  ${this.opcodeHandler.disassembleOpcode(pc, ...opcodeBytes)}`;
         pc += length;
       } else if(type === ByteType.DATA_LW) {
         // check for label one spot ahead in word
         if(this.labels.get(pc + 1) === 0) {
-          output += `_${hexStr(pc + 1, 16)} = * + ${1}\n`;
+          output += `_${hexStr(pc + 1, 16)} = * + 1\n`;
+          this.logWarning(`Label wanted within word at $${hexStr(pc + 1, 16)}`);
         }
         // emit word
         let word = this.data[pc]! | (this.data[pc + 1]! << 8);
-        output += `  .dw ${this.getAdrRef(word, false)}\n`;
+        output += `  .dw ${this.getAdrRef(word, false)}`;
         pc += 2;
       } else {
         // print first byte, or lb/hb of word for split table
@@ -311,8 +332,11 @@ export class Disassembler {
           output += `, ${this.getDataByte(this.data[pc]!, type, bInfo.word)}`;
           pc++;
         }
-        output += "\n";
       }
+      if(this.adrComments) {
+        output += ` ;@${hexStr(linePc, 16)}`;
+      }
+      output += "\n";
     }
 
     return output;

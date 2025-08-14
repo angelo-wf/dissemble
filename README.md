@@ -33,8 +33,14 @@ Example (format not final):
   offset: 0xc000,
   // Amount of bytes to load
   length: 0x4000,
-  // Optional, indicates that addresses s to e (inclusive) are RAM (or otherwise not ROM), so expected to be written.
+  // Optional. Indicates that addresses s to e (inclusive) are RAM (or otherwise not ROM), so expected to be written
   nonRom: {s: 0, e: 0x7fff},
+  // Optional. If true, idicates to also use labels for addresses accessed in the indicated non-rom area.
+  // All of them will be defined with equates at the top of the disassembly
+  ramLabels: true,
+  // Optional. If true, will add a comment in the form ';@<adr>' after aeach line of disassembly or data.
+  // This can make finding locations in long stretches without labels easier
+  adrComments: false,
   // List of addresses to handle
   addresses: [
     // Indicates to start disassembly from this address

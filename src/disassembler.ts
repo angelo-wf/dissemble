@@ -55,6 +55,9 @@ export class Disassembler {
   private codeStarts: number[] = [];
 
   constructor(config: Config, data: Uint8Array) {
+    // set config
+    this.ramLabels = config.ramLabels;
+    this.adrComments = config.adrComments;
     // copy data to correct spot
     for(let i = 0; i < config.length; i++) {
       this.data[config.offset + i] = data[config.fileOffset + i]!;
@@ -132,9 +135,6 @@ export class Disassembler {
     switch(config.architecture) {
       case Architecture.M6502: this.opcodeHandler = new M6502Handler(this);
     }
-    // set misc items
-    this.ramLabels = config.ramLabels;
-    this.adrComments = config.adrComments;
   }
 
   disassemble(): string {

@@ -38,7 +38,7 @@ Example (format not final):
   // Optional. If true, idicates to also use labels for addresses accessed in the indicated non-rom area.
   // All of them will be defined with equates at the top of the disassembly
   ramLabels: true,
-  // Optional. If true, will add a comment in the form ';@<adr>' after aeach line of disassembly or data.
+  // Optional. If true, will add a comment in the form ';@<adr>' after each line of disassembly or data.
   // This can make finding locations in long stretches without labels easier
   adrComments: false,
   // List of addresses to handle

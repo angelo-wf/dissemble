@@ -1,6 +1,6 @@
 # Dissemble
 
-A very WIP tracing disassembler (currently) supporting the 6502, written in TypeScript.
+A WIP tracing disassembler (currently) supporting the 6502, written in TypeScript.
 
 ## Compilng and running
 
@@ -12,6 +12,9 @@ Compile:
 
 Run:
 - `node build/main.js` (or `npm start --` to compile as well)
+
+Test:
+- `node build/test/test.js` (or `npm test` to compile as well)
 
 ## Usage
 
@@ -72,8 +75,10 @@ Example (format not final):
 The disassembler will trace from the given starts to use, following jumps, calls and branches, and stopping at returns.
 Labels will be emitted for jump/branch targets and subroutines, as well as data locations.
 It can not handle dynamic jumps, and will emit a warning when these are encountered.
-No labels will be generated for locations outside the disassembled area, and the output should directly reassemble.
+No labels will be generated for locations outside the disassembled area, except for ram-area labels when configured to do so.
 Warning are thrown for various cases, like accesses to outside the mapped area or writes to ROM.
+
+Output should re-assemble with Elsemble (or other assemblers, possibly with some syntax-changes) to an exact match for the indicated area to disassemble.
 
 ## License
 

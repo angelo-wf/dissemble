@@ -6,6 +6,22 @@
   nonRom: {s: 0, e: 0x7fff},
   ramLabels: true,
   addresses: [
-    {t: "start", adr: 0x8000}
+    {t: "start", adr: 0x8000},
+    {t: "start", adr: 0x8012},
+    {t: "stop", adr: 0x8020},
+    {t: "stop", adr: 0x8020},
+    {t: "data", adr: 0x8032, off: 1},
+    {t: "data", adr: 0x8037, off: -1},
+    {t: "skip", adr: 0x8044, skip: 2},
+    {t: "skip", adr: 0x805a, skip: 2},
+    {t: "pointers", adr: 0x8076, count: 2},
+    {t: "pointers", adr: 0x807a, adrh: 0x807c, count: 2},
+    {t: "pointers", adr: 0x807e, count: 2, off: 1},
+    {t: "pointers", adr: 0x8082, adrh: 0x8084, count: 2, off: 2},
+    {t: "table", adr: 0x80bf, count: 2},
+    {t: "table", adr: 0x80c3, adrh: 0x80c5, count: 2},
+    {t: "table", adr: 0x80c7, count: 2, off: 1},
+    {t: "table", adr: 0x80cb, adrh: 0x80cd, count: 2, off: -3},
+    {t: "data", adr: 0x80e7},
   ]
 }

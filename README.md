@@ -78,7 +78,7 @@ It can not handle dynamic jumps, and will emit a warning when these are encounte
 No labels will be generated for locations outside the disassembled area, except for ram-area labels when configured to do so.
 Warning are thrown for various cases, like accesses to outside the mapped area or writes to ROM.
 
-Output should re-assemble with Elsemble (or other assemblers, possibly with some syntax-changes) to an exact match for the indicated area to disassemble.
+Output should re-assemble with my assembler [Elsemble](https://github.com/angelo-wf/elsemble) (or other assemblers, possibly with some syntax-changes) to an exact match for the indicated area to disassemble.
 
 ## License
 

@@ -16,12 +16,26 @@ function compareFiles(pathA: string, pathB: string): boolean {
   return true;
 }
 
+function runTest(loc: string): void {
+  console.log(`Running test ${loc}`);
+  // runs test(s)
+  let args = ["build/main.js", `${loc}/test.bin`, "testout/out.s", `${loc}/test_cfg.json5`];
+  let result = child_process.spawnSync("node", args, {timeout: 10000});
+  // test return code (0)
+  if(result.status !== 0) throw new Error("Disassembly failed! Error:\n" + result.stderr.toString("utf-8"));
+  console.log(result.stdout.toString("utf-8"));
+  // test matching output
+  if(!compareFiles("testout/out.s", `${loc}/expected.s`)) throw new Error("Output files were not equal!");
+}
+
+const tests: string[] = [
+  "test", "test/m6502"
+];
+
 // create dirctory for test results
 fs.mkdirSync("testout", {recursive: true});
+
 // runs test(s)
-let args = ["build/main.js", "test/test.bin", "testout/out.s", "test/test_cfg.json5"];
-let result = child_process.spawnSync("node", args, {timeout: 10000});
-// test return code (0)
-if(result.status !== 0) throw new Error("Disassembly failed! Error:\n" + result.stderr.toString("utf-8"));
-// test matching output
-if(!compareFiles("testout/out.s", "test/expected.s")) throw new Error("Output files were not equal!");
+for(let test of tests) {
+  runTest(test);
+}

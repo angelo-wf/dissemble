@@ -5,8 +5,9 @@
 ptrs:
   .dw start, start2, start3, start4, start5
 
-start:
+; all opcodes
 
+start:
 brk #$12
 bpl target1
 jsr target1
@@ -284,6 +285,66 @@ dcp $1234
 dcp $1234, x
 isc $1234
 isc $1234, x
+
+; absolute opcodes with arguments < $100 (but not zeropage)
+
+ora.a $12
+ora.a $12, x
+and.a $12
+and.a $12, x
+eor.a $12
+eor.a $12, x
+adc.a $12
+adc.a $12, x
+sta.a $12
+sta.a $12, x
+lda.a $12
+lda.a $12, x
+cmp.a $12
+cmp.a $12, x
+sbc.a $12
+sbc.a $12, x
+
+asl.a $12
+asl.a $12, x
+rol.a $12
+rol.a $12, x
+lsr.a $12
+lsr.a $12, x
+ror.a $12
+ror.a $12, x
+stx.a $12
+ldx.a $12
+ldx.a $12, y
+dec.a $12
+dec.a $12, x
+inc.a $12
+inc.a $12, x
+
+nop.a $12
+nop.a $12, x
+bit.a $12
+sty.a $12
+ldy.a $12
+ldy.a $12, x
+cpy.a $12
+cpx.a $12
+
+slo.a $12
+slo.a $12, x
+rla.a $12
+rla.a $12, x
+sre.a $12
+sre.a $12, x
+rra.a $12
+rra.a $12, x
+sax.a $12
+lax.a $12
+lax.a $12, y
+dcp.a $12
+dcp.a $12, x
+isc.a $12
+isc.a $12, x
 
 jmp start
 

@@ -1,4 +1,5 @@
 import { M6502Handler } from "./architectures/m6502.js";
+import { Z80Handler } from "./architectures/z80.js";
 import { AdrType, Architecture, Config } from "./config.js";
 
 export enum ByteType {
@@ -26,8 +27,8 @@ export type ByteInfo = {
 export interface OpcodeHandler {
   // Assumes 2 bytes to be enough to determine opcode length
   getOpcodeLength(byte1: number, byte2: number): number;
-  traceOpcode(pc: number, ...bytes: number[]): boolean;
-  disassembleOpcode(pc: number, ...bytes: number[]): string;
+  traceOpcode(pc: number, bytes: number[]): boolean;
+  disassembleOpcode(pc: number, bytes: number[]): string[];
 }
 
 export function hexStr(val: number, size: number): string {
@@ -133,7 +134,8 @@ export class Disassembler {
     }
     // create opcode handler according to arch
     switch(config.architecture) {
-      case Architecture.M6502: this.opcodeHandler = new M6502Handler(this);
+      case Architecture.M6502: this.opcodeHandler = new M6502Handler(this); break;
+      case Architecture.Z80: this.opcodeHandler = new Z80Handler(this); break;
     }
   }
 
@@ -198,7 +200,7 @@ export class Disassembler {
       opBytes.push(this.data[pc + i]!);
     }
 
-    let cont = this.opcodeHandler.traceOpcode(pc, ...opBytes);
+    let cont = this.opcodeHandler.traceOpcode(pc, opBytes);
     return cont ? length : undefined;
   }
 
@@ -304,7 +306,11 @@ export class Disassembler {
           opcodeBytes.push(this.data[pc + i]!);
         }
         // then emit opcode
-        output += `  ${this.opcodeHandler.disassembleOpcode(pc, ...opcodeBytes)}`;
+        let opcodeStrings = this.opcodeHandler.disassembleOpcode(pc, opcodeBytes);
+        for(let i = 0; i < opcodeStrings.length; i++) {
+          output += `  ${opcodeStrings[i]}`;
+          if(i !== opcodeStrings.length - 1) output += "\n";
+        }
         pc += length;
       } else if(type === ByteType.DATA_LW) {
         // check for label one spot ahead in word

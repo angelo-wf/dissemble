@@ -131,9 +131,7 @@ export class M6502Handler implements OpcodeHandler {
     return target & 0xffff;
   }
 
-  traceOpcode(pc: number, ...bytes: number[]): boolean {
-    let cont = true;
-
+  traceOpcode(pc: number, bytes: number[]): boolean {
     let opcode = bytes[0]!;
     if(opcodeTypes[opcode]! > 0) {
       this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
@@ -183,10 +181,10 @@ export class M6502Handler implements OpcodeHandler {
       this.dis.addLabel(adr, pc);
     }
 
-    return cont;
+    return true;
   }
 
-  disassembleOpcode(pc: number, ...bytes: number[]): string {
+  disassembleOpcode(pc: number, bytes: number[]): string[] {
     let opcode = bytes[0]!;
     let opString = opcodeStrings[opcode]!;
     let opMode = opcodeModes[opcode]!;
@@ -225,12 +223,12 @@ export class M6502Handler implements OpcodeHandler {
 
     if(opcodeTypes[opcode]! === 2) {
       // repeat encoding, output as db/dw statements
-      let out = `.db $${hexStr(opcode, 8)} ; ${outString}`;
+      let out = [`.db $${hexStr(opcode, 8)} ; ${outString}`];
       if(len > 1) {
-        out += len === 3 ? `\n  .dw $${hexStr(this.asWord(bytes[1]!, bytes[2]!), 16)}` : `\n  .db $${hexStr(bytes[1]!, 8)}`;
+        out.push(len === 3 ? `.dw $${hexStr(this.asWord(bytes[1]!, bytes[2]!), 16)}` : `.db $${hexStr(bytes[1]!, 8)}`);
       }
       return out;
     }
-    return outString;
+    return [outString];
   }
 }

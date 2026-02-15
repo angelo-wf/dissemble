@@ -23,7 +23,7 @@ ret
 
 ptrs:
   .dw start, start2, start3, start4, start5, start6, start7, start8
-  .dw start9, start10, start11, start12, start13, start14, start15
+  .dw start9, start10, start11, start12, start13, start14, start15, traceStart
 
 ; main opcodes
 
@@ -294,6 +294,7 @@ cp $12
 rst $08
 rst $18
 rst $28
+.dw $1234 ; has skip set up
 rst $38
 
 ; ed-opcodes
@@ -613,6 +614,118 @@ ld sp, iy
 .db $fd, $dd, $fd, $e5
 
 jp start
+
+; tracing test
+
+dest1:
+  ret
+  .db $00
+dest2:
+  reti
+  .db $00
+dest3:
+  retn
+  .db $00
+
+traceStart:
+  djnz dest1
+  jr nz, dest2
+  jr nc, dest3
+  jr z, dest4
+  jr c, dest5
+  jp nz, dest6
+  jp nc, dest7
+  jp po, dest8
+  jp p, dest9
+  jp z, dest10
+  jp c, dest11
+  jp pe, dest12
+  jp m, dest13
+  call nz, dest14
+  call nc, dest15
+  call po, dest16
+  call p, dest17
+  call z, dest18
+  call c, dest19
+  call pe, dest20
+  call m, dest21
+  call dest22
+  call destSkip
+  .db $12
+  jr .jmpDest1
+  .db $00
+.jmpDest1:
+  jp .jmpDest2
+  .db $00
+.jmpDest2:
+  call destEnd
+  .db $00
+
+dest4:
+  .db $ed, $55
+  .db $00
+dest5:
+  .db $ed, $65
+  .db $00
+dest6:
+  .db $ed, $75
+  .db $00
+dest7:
+  .db $ed, $5d
+  .db $00
+dest8:
+  .db $ed, $6d
+  .db $00
+dest9:
+  .db $ed, $7d
+  .db $00
+dest10:
+  jp (hl)
+  .db $00
+dest11:
+  jp (ix)
+  .db $00
+dest12:
+  jp (iy)
+  .db $00
+dest13:
+  ret
+  .db $00
+dest14:
+  ret
+  .db $00
+dest15:
+  ret
+  .db $00
+dest16:
+  ret
+  .db $00
+dest17:
+  ret
+  .db $00
+dest18:
+  ret
+  .db $00
+dest19:
+  ret
+  .db $00
+dest20:
+  ret
+  .db $00
+dest21:
+  ret
+  .db $00
+dest22:
+  ret
+  .db $00
+
+.pad $0ff0
+destSkip:
+  ret
+  .db $00
+destEnd:
+  ret
+  .db $00
 
 .pad $1000
 ; length = $1000

@@ -27,27 +27,28 @@ _0038:
   ret
   .db $00, $00, $00, $00, $00, $00, $00
 _0040:
-  .dw _005e
-  .dw _0094
-  .dw _0153
-  .dw _0178
+  .dw _0060
+  .dw _0096
+  .dw _0155
   .dw _017a
-  .dw _0258
-  .dw _025a
+  .dw _017c
   .dw _025c
   .dw _025e
-  .dw _02a0
-  .dw _02a2
+  .dw _0260
+  .dw _0262
   .dw _02a4
   .dw _02a6
-  .dw _066c
-  .dw _0724
-_005e:
+  .dw _02a8
+  .dw _02aa
+  .dw _0670
+  .dw _0728
+  .dw _0f5b
+_0060:
   nop
-  djnz _0065
-  jr nz, _0065
-  jr nc, _0065
-_0065:
+  djnz _0067
+  jr nz, _0067
+  jr nc, _0067
+_0067:
   ld bc, $1234
   ld de, $1234
   ld hl, $1234
@@ -77,11 +78,11 @@ _0065:
   daa
   scf
   ex af, af' ;'
-  jr _0098
-_0094:
-  jr z, _0098
-  jr c, _0098
-_0098:
+  jr _009a
+_0096:
+  jr z, _009a
+  jr c, _009a
+_009a:
   add hl, bc
   add hl, de
   add hl, hl
@@ -246,20 +247,20 @@ _0098:
   pop de
   pop hl
   pop af
-  jp nz, _0163
-  jp nc, _0163
-  jp po, _0163
-  jp p, _0163
-  jp _0163
-_0153:
+  jp nz, _0165
+  jp nc, _0165
+  jp po, _0165
+  jp p, _0165
+  jp _0165
+_0155:
   out ($12), a
   ex (sp), hl
   di
-  call nz, _0163
-  call nc, _0163
-  call po, _0163
-  call p, _0163
-_0163:
+  call nz, _0165
+  call nc, _0165
+  call po, _0165
+  call p, _0165
+_0165:
   push bc
   push de
   push hl
@@ -277,24 +278,24 @@ _0163:
   ret pe
   ret m
   ret
-_0178:
+_017a:
   exx
   jp (hl)
-_017a:
+_017c:
   ld sp, hl
-  jp z, _019a
-  jp c, _019a
-  jp pe, _019a
-  jp m, _019a
+  jp z, _019c
+  jp c, _019c
+  jp pe, _019c
+  jp m, _019c
   in a, ($12)
   ex de, hl
   ei
-  call z, _019a
-  call c, _019a
-  call pe, _019a
-  call m, _019a
-  call _019a
-_019a:
+  call z, _019c
+  call c, _019c
+  call pe, _019c
+  call m, _019c
+  call _019c
+_019c:
   adc a, $12
   sbc a, $12
   xor $12
@@ -302,6 +303,7 @@ _019a:
   rst $08
   rst $18
   rst $28
+  .db $34, $12
   rst $38
   .db $ed, $00 ; nop
   .db $ed, $01 ; nop
@@ -389,13 +391,13 @@ _019a:
   .db $ed, $64 ; neg
   .db $ed, $74 ; neg
   retn
-_0258:
-  .db $ed, $55 ; retn
-_025a:
-  .db $ed, $65 ; retn
 _025c:
-  .db $ed, $75 ; retn
+  .db $ed, $55 ; retn
 _025e:
+  .db $ed, $65 ; retn
+_0260:
+  .db $ed, $75 ; retn
+_0262:
   im 0
   im 1
   .db $ed, $66 ; im 0
@@ -426,13 +428,13 @@ _025e:
   .db $ed, $6c ; neg
   .db $ed, $7c ; neg
   reti
-_02a0:
-  .db $ed, $5d ; reti
-_02a2:
-  .db $ed, $6d ; reti
 _02a4:
-  .db $ed, $7d ; reti
+  .db $ed, $5d ; reti
 _02a6:
+  .db $ed, $6d ; reti
+_02a8:
+  .db $ed, $7d ; reti
+_02aa:
   .db $ed, $4e ; im 0
   im 2
   .db $ed, $6e ; im 0
@@ -899,7 +901,7 @@ _02a6:
   ex (sp), ix
   push ix
   jp (ix)
-_066c:
+_0670:
   ld sp, ix
   ld iy, $1234
   ld (_89ab), iy
@@ -975,7 +977,7 @@ _066c:
   ex (sp), iy
   push iy
   jp (iy)
-_0724:
+_0728:
   ld sp, iy
   rlc (ix + $12), b
   rlc (ix + $12), c
@@ -1517,27 +1519,113 @@ _0724:
   .db $fd ; ignored iy-prefix
   .db $dd ; ignored ix-prefix
   push iy
-  jp _005e
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
-  .db $00, $00, $00, $00, $00, $00, $00, $00
+  jp _0060
+_0f53:
+  ret
   .db $00
+_0f55:
+  reti
+  .db $00
+_0f58:
+  retn
+  .db $00
+_0f5b:
+  djnz _0f53
+  jr nz, _0f55
+  jr nc, _0f58
+  jr z, _0fa7
+  jr c, _0faa
+  jp nz, _0fad
+  jp nc, _0fb0
+  jp po, _0fb3
+  jp p, _0fb6
+  jp z, _0fb9
+  jp c, _0fbb
+  jp pe, _0fbe
+  jp m, _0fc1
+  call nz, _0fc3
+  call nc, _0fc5
+  call po, _0fc7
+  call p, _0fc9
+  call z, _0fcb
+  call c, _0fcd
+  call pe, _0fcf
+  call m, _0fd1
+  call _0fd3
+  call _0ff0
+  .db $12
+  jr _0f9f
+  .db $00
+_0f9f:
+  jp _0fa3
+  .db $00
+_0fa3:
+  call _0ff2
+  .db $00
+_0fa7:
+  .db $ed, $55 ; retn
+  .db $00
+_0faa:
+  .db $ed, $65 ; retn
+  .db $00
+_0fad:
+  .db $ed, $75 ; retn
+  .db $00
+_0fb0:
+  .db $ed, $5d ; reti
+  .db $00
+_0fb3:
+  .db $ed, $6d ; reti
+  .db $00
+_0fb6:
+  .db $ed, $7d ; reti
+  .db $00
+_0fb9:
+  jp (hl)
+  .db $00
+_0fbb:
+  jp (ix)
+  .db $00
+_0fbe:
+  jp (iy)
+  .db $00
+_0fc1:
+  ret
+  .db $00
+_0fc3:
+  ret
+  .db $00
+_0fc5:
+  ret
+  .db $00
+_0fc7:
+  ret
+  .db $00
+_0fc9:
+  ret
+  .db $00
+_0fcb:
+  ret
+  .db $00
+_0fcd:
+  ret
+  .db $00
+_0fcf:
+  ret
+  .db $00
+_0fd1:
+  ret
+  .db $00
+_0fd3:
+  ret
+  .db $00, $00, $00, $00, $00, $00, $00, $00
+  .db $00, $00, $00, $00, $00, $00, $00, $00
+  .db $00, $00, $00, $00, $00, $00, $00, $00
+  .db $00, $00, $00, $00
+_0ff0:
+  ret
+  .db $00
+_0ff2:
+  ret
+  .db $00, $00, $00, $00, $00, $00, $00, $00
+  .db $00, $00, $00, $00, $00

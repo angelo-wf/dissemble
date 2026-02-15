@@ -6,6 +6,8 @@
   nonRom: {s: 0, e: 0x7fff},
   ramLabels: true,
   addresses: [
-    {t: "pointers", adr: 0x8000, count: 5}
+    {t: "pointers", adr: 0x8000, count: 6},
+    {t: "skip", adr: 0x8ff0, skip: 1},
+    {t: "skip", adr: 0x8ff2, skip: 0}
   ]
 }

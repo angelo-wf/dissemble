@@ -3,7 +3,7 @@
 .org $8000
 
 ptrs:
-  .dw start, start2, start3, start4, start5
+  .dw start, start2, start3, start4, start5, traceStart
 
 ; all opcodes
 
@@ -347,6 +347,63 @@ isc.a $12
 isc.a $12, x
 
 jmp start
+
+; tracing test
+
+dest1:
+  rts
+  .db $00
+dest2:
+  rti
+  .db $00
+dest3:
+  jmp ($1234)
+  .db $00
+dest4:
+  rts
+  .db $00
+
+traceStart:
+  bpl dest1
+  bmi dest2
+  bvc dest3
+  bvs dest4
+  bcc dest5
+  bcs dest6
+  bne dest7
+  beq dest8
+  jsr dest9
+  jsr destSkip
+  .db $12
+  jmp .jmpDest1
+  .db $00
+.jmpDest1:
+  jsr destEnd
+  .db $00
+
+dest5:
+  rts
+  .db $00
+dest6:
+  rts
+  .db $00
+dest7:
+  rts
+  .db $00
+dest8:
+  rts
+  .db $00
+dest9:
+  rts
+  .db $00
+
+.pad $8ff0
+destSkip:
+  rts
+  .db $00
+destEnd:
+  rts
+  .db $00
 
 .pad $9000
 ; length = $1000

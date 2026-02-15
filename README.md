@@ -1,6 +1,6 @@
 # Dissemble
 
-A WIP tracing disassembler (currently) supporting the 6502, written in TypeScript.
+A WIP tracing disassembler (currently) supporting the 6502 and Z80, written in TypeScript.
 
 ## Compilng and running
 
@@ -28,7 +28,7 @@ JSON5 is used to make editing directly easier, due to support for comments and h
 Example (format not final):
 ```javascript
 {
-  // Architecture to use, only 'm6502' is currently supported
+  // Architecture to use, 'm6502' and 'z80' are currently supported
   architecture: "m6502",
   // Offset in file to start loading from
   fileOffset: 0x10,

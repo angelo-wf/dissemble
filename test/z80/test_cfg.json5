@@ -1,0 +1,11 @@
+{
+  architecture: "z80",
+  fileOffset: 0,
+  offset: 0x0000,
+  length: 0x1000,
+  nonRom: {s: 0x8000, e: 0xffff},
+  ramLabels: true,
+  addresses: [
+    {t: "pointers", adr: 0x0040, count: 15}
+  ]
+}

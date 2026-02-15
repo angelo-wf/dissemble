@@ -1,22 +1,22 @@
 import { Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
 
 const mainOpcodes: string[] = [
-  "nop",         "ld bc, WRD",  "ld (bc), a",    "inc bc",       "inc b",        "dec b",       "ld b, BYT",     "rlca",        "ex af, af'", "add IDX, bc",  "ld a, (bc)",    "dec bc",      "inc c",        "dec c",       "ld c, BYT",    "rrca",
-  "djnz REL",    "ld de, WRD",  "ld (de), a",    "inc de",       "inc d",        "dec d",       "ld d, BYT",     "rla",         "jr REL",     "add IDX, de",  "ld a, (de)",    "dec de",      "inc e",        "dec e",       "ld e, BYT",    "rra",
-  "jr nz, REL",  "ld IDX, WRD", "ld (ADW), IDX", "inc IDX",      "inc IDH",      "dec IDH",     "ld IDH, BYT",   "daa",         "jr z, REL",  "add IDX, IDX", "ld IDX, (ADR)", "dec IDX",     "inc IDL",      "dec IDL",     "ld IDL, BYT",  "cpl",
-  "jr nc, REL",  "ld sp, WRD",  "ld (ADW), a",   "inc sp",       "inc (IDD)",    "dec (IDD)",   "ld (IDD), BYT", "dcf",         "jr c, REL",  "add IDX, sp",  "ld a, (ADR)",   "dec sp",      "inc a",        "dec a",       "ld a, BYT",    "ccf",
-  "ld b, b",     "ld b, c",     "ld b, d",       "ld b, e",      "ld b, IDH",    "ld b, IDL",   "ld b, (IDD)",   "ld b, a",     "ld c, b",    "ld c, c",      "ld c, d",       "ld c, e",     "ld c, IDH",    "ld c, IDL",   "ld c, (IDD)",  "ld c, a",
-  "ld d, b",     "ld d, c",     "ld d, d",       "ld d, e",      "ld d, IDH",    "ld d, IDL",   "ld d, (IDD)",   "ld d, a",     "ld e, b",    "ld e, c",      "ld e, d",       "ld e, e",     "ld e, IDH",    "ld e, IDL",   "ld e, (IDD)",  "ld e, a",
-  "ld IDH, b",   "ld IDH, c",   "ld IDH, d",     "ld IDH, e",    "ld IDH, IDH",  "ld IDH, IDL", "ld h, (IDD)",   "ld IDH, a",   "ld IDL, b",  "ld IDL, c",    "ld IDL, d",     "ld IDL, e",   "ld IDL, IDH",  "ld IDL, IDL", "ld l, (IDD)",  "ld IDL, a",
-  "ld (IDD), b", "ld (IDD), c", "ld (IDD), d",   "ld (IDD), e",  "ld (IDD), h",  "ld (IDD), l", "halt",          "ld (IDD), a", "ld a, b",    "ld a, c",      "ld a, d",       "ld a, e",     "ld a, IDH",    "ld a, IDL",   "ld a, (IDD)",  "ld a, a",
-  "add a, b",    "add a, c",    "add a, d",      "add a, e",     "add a, IDH",   "add a, IDL",  "add a, (IDD)",  "add a, a",    "adc a, b",   "adc a, c",     "adc a, d",      "adc a, e",    "adc a, IDH",   "adc a, IDL",  "adc a, (IDD)", "adc a, a",
-  "sub b",       "sub c",       "sub d",         "sub e",        "sub IDH",      "sub IDL",     "sub (IDD)",     "sub a",       "sbc a, b",   "sbc a, c",     "sbc a, d",      "sbc a, e",    "sbc a, IDH",   "sbc a, IDL",  "sbc a, (IDD)", "sbc a, a",
-  "and b",       "and c",       "and d",         "and e",        "and IDH",      "and IDL",     "and (IDD)",     "and a",       "xor b",      "xor c",        "xor d",         "xor e",       "xor IDH",      "xor IDL",     "xor (IDD)",    "xor a",
-  "or b",        "or c",        "or d",          "or e",         "or IDH",       "or IDL",      "or (IDD)",      "or a",        "cp b",       "cp c",         "cp d",          "cp e",        "cp IDH",       "cp IDL",      "cp (IDD)",     "cp a",
-  "ret nz",      "pop bc",      "jp nz, ADR",    "jp ADR",       "call nz, ADR", "push bc",     "add a, BYT",    "rst $00",     "ret z",      "ret",          "jp z, ADR",     "<bit>",       "call z, ADR",  "call ADR",    "adc a, BYT",   "rst $08",
-  "ret nc",      "pop de",      "jp nc, ADR",    "out (BYT), a", "call nc, ADR", "push de",     "sub BYT",       "rst $10",     "ret c",      "exx",          "jp c, ADR",     "in a, (BYT)", "call c, ADR",  "<ix>",        "sbc a, BYT",   "rst $18",
-  "ret po",      "pop IDX",     "jp po, ADR",    "ex (sp), IDX", "call po, ADR", "push IDX",    "and BYT",       "rst $20",     "ret pe",     "jp (IDX)",     "jp pe, ADR",    "ex de, hl",   "call pe, ADR", "<ed>",        "xor BYT",      "rst $28",
-  "ret p",       "pop af",      "jp p, ADR",     "di",           "call p, ADR",  "push af",     "or BYT",        "rst $30",     "ret m",      "ld sp, IDX",   "jp m, ADR",     "ei",          "call m, ADR",  "<iy>",        "cp BYT",       "rst $38"
+  "nop",         "ld bc, WRD",  "ld (bc), a",    "inc bc",       "inc b",        "dec b",       "ld b, BYT",     "rlca",        "ex af, af' ;'", "add IDX, bc",  "ld a, (bc)",    "dec bc",      "inc c",        "dec c",       "ld c, BYT",    "rrca",
+  "djnz REL",    "ld de, WRD",  "ld (de), a",    "inc de",       "inc d",        "dec d",       "ld d, BYT",     "rla",         "jr REL",        "add IDX, de",  "ld a, (de)",    "dec de",      "inc e",        "dec e",       "ld e, BYT",    "rra",
+  "jr nz, REL",  "ld IDX, WRD", "ld (ADW), IDX", "inc IDX",      "inc IDH",      "dec IDH",     "ld IDH, BYT",   "daa",         "jr z, REL",     "add IDX, IDX", "ld IDX, (ADR)", "dec IDX",     "inc IDL",      "dec IDL",     "ld IDL, BYT",  "cpl",
+  "jr nc, REL",  "ld sp, WRD",  "ld (ADW), a",   "inc sp",       "inc (IDD)",    "dec (IDD)",   "ld (IDD), BYT", "scf",         "jr c, REL",     "add IDX, sp",  "ld a, (ADR)",   "dec sp",      "inc a",        "dec a",       "ld a, BYT",    "ccf",
+  "ld b, b",     "ld b, c",     "ld b, d",       "ld b, e",      "ld b, IDH",    "ld b, IDL",   "ld b, (IDD)",   "ld b, a",     "ld c, b",       "ld c, c",      "ld c, d",       "ld c, e",     "ld c, IDH",    "ld c, IDL",   "ld c, (IDD)",  "ld c, a",
+  "ld d, b",     "ld d, c",     "ld d, d",       "ld d, e",      "ld d, IDH",    "ld d, IDL",   "ld d, (IDD)",   "ld d, a",     "ld e, b",       "ld e, c",      "ld e, d",       "ld e, e",     "ld e, IDH",    "ld e, IDL",   "ld e, (IDD)",  "ld e, a",
+  "ld IDH, b",   "ld IDH, c",   "ld IDH, d",     "ld IDH, e",    "ld IDH, IDH",  "ld IDH, IDL", "ld h, (IDD)",   "ld IDH, a",   "ld IDL, b",     "ld IDL, c",    "ld IDL, d",     "ld IDL, e",   "ld IDL, IDH",  "ld IDL, IDL", "ld l, (IDD)",  "ld IDL, a",
+  "ld (IDD), b", "ld (IDD), c", "ld (IDD), d",   "ld (IDD), e",  "ld (IDD), h",  "ld (IDD), l", "halt",          "ld (IDD), a", "ld a, b",       "ld a, c",      "ld a, d",       "ld a, e",     "ld a, IDH",    "ld a, IDL",   "ld a, (IDD)",  "ld a, a",
+  "add a, b",    "add a, c",    "add a, d",      "add a, e",     "add a, IDH",   "add a, IDL",  "add a, (IDD)",  "add a, a",    "adc a, b",      "adc a, c",     "adc a, d",      "adc a, e",    "adc a, IDH",   "adc a, IDL",  "adc a, (IDD)", "adc a, a",
+  "sub b",       "sub c",       "sub d",         "sub e",        "sub IDH",      "sub IDL",     "sub (IDD)",     "sub a",       "sbc a, b",      "sbc a, c",     "sbc a, d",      "sbc a, e",    "sbc a, IDH",   "sbc a, IDL",  "sbc a, (IDD)", "sbc a, a",
+  "and b",       "and c",       "and d",         "and e",        "and IDH",      "and IDL",     "and (IDD)",     "and a",       "xor b",         "xor c",        "xor d",         "xor e",       "xor IDH",      "xor IDL",     "xor (IDD)",    "xor a",
+  "or b",        "or c",        "or d",          "or e",         "or IDH",       "or IDL",      "or (IDD)",      "or a",        "cp b",          "cp c",         "cp d",          "cp e",        "cp IDH",       "cp IDL",      "cp (IDD)",     "cp a",
+  "ret nz",      "pop bc",      "jp nz, DST",    "jp DST",       "call nz, DST", "push bc",     "add a, BYT",    "rst $00",     "ret z",         "ret",          "jp z, DST",     "<bit>",       "call z, DST",  "call DST",    "adc a, BYT",   "rst $08",
+  "ret nc",      "pop de",      "jp nc, DST",    "out (BYT), a", "call nc, DST", "push de",     "sub BYT",       "rst $10",     "ret c",         "exx",          "jp c, DST",     "in a, (BYT)", "call c, DST",  "<ix>",        "sbc a, BYT",   "rst $18",
+  "ret po",      "pop IDX",     "jp po, DST",    "ex (sp), IDX", "call po, DST", "push IDX",    "and BYT",       "rst $20",     "ret pe",        "jp (IDX)",     "jp pe, DST",    "ex de, hl",   "call pe, DST", "<ed>",        "xor BYT",      "rst $28",
+  "ret p",       "pop af",      "jp p, DST",     "di",           "call p, DST",  "push af",     "or BYT",        "rst $30",     "ret m",         "ld sp, IDX",   "jp m, DST",     "ei",          "call m, DST",  "<iy>",        "cp BYT",       "rst $38"
 ];
 
 const edOpcodes: string[] = [
@@ -43,6 +43,9 @@ const bitOpcodes = [
   "bit 0,", "bit 1,", "bit 2,", "bit 3,", "bit 4,", "bit 5,", "bit 6,", "bit 7,",
   "res 0,", "res 1,", "res 2,", "res 3,", "res 4,", "res 5,", "res 6,", "res 7,",
   "set 0,", "set 1,", "set 2,", "set 3,", "set 4,", "set 5,", "set 6,", "set 7,"
+];
+const bitRegs = [
+  "b", "c", "d", "e", "h", "l", "(hl)", "a"
 ];
 
 export class Z80Handler implements OpcodeHandler {
@@ -81,7 +84,7 @@ export class Z80Handler implements OpcodeHandler {
     let opStr = idxPrefix ? mainOpcodes[byte2]! : mainOpcodes[byte1]!;
     let length = idxPrefix ? 2 : 1;
     if(this.includesAny(opStr, ["BYT", "REL"])) length += 1;
-    if(this.includesAny(opStr, ["WRD", "ADR", "ADW"])) length += 2;
+    if(this.includesAny(opStr, ["WRD", "ADR", "ADW", "DST"])) length += 2;
     if(idxPrefix && opStr.includes("IDD")) length += 1;
     return length;
   }
@@ -95,11 +98,14 @@ export class Z80Handler implements OpcodeHandler {
     return target & 0xffff;
   }
 
+  // TODO: handle undocumented-log, indirect-log, rom-write-log (with check) in disassembler self
+  // TODO: handle skip as function in disassembler
+  // TODO: generic 'asWord'-function (like 'hexStr')
   traceOpcode(pc: number, bytes: number[]): boolean {
     if(bytes[0] === 0xed) {
       // ed opcode
       let opByte = bytes[1]!;
-      let opStr = edOpcodes[bytes[1]!]!;
+      let opStr = edOpcodes[opByte]!;
       if(opByte === 0x70 || opByte === 0x71 || opStr.startsWith("U")) {
         this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
       }
@@ -109,11 +115,12 @@ export class Z80Handler implements OpcodeHandler {
         return false;
       }
 
-      if(opStr.includes("ADW")) {
+      if(this.includesAny(opStr, ["ADR", "ADR"])) {
         let adr = this.asWord(bytes[2]!, bytes[3]!);
-        if(this.dis.isRomArea(adr)) {
+        if(opStr.includes("ADW") && this.dis.isRomArea(adr)) {
           this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
         }
+        this.dis.addLabel(adr, pc);
       }
 
       return true;
@@ -152,14 +159,15 @@ export class Z80Handler implements OpcodeHandler {
     }
 
     if([0x10, 0x20, 0x30, 0x18, 0x28, 0x38].includes(opByte)) {
-      // branch, add target as start
+      // branch, add target as start, stop tracing for non-conditional
       this.dis.addStart(this.getBranchTarget(pc, bytes[1]!), pc, true);
-      return true;
+      return opByte !== 0x18;
     }
     if([0xc4, 0xd4, 0xe4, 0xf4, 0xcc, 0xdc, 0xec, 0xfc, 0xcd].includes(opByte)) {
-      // call, add address as start, handle skip bytes
+      // call, add address as start, handle skip bytes for non-conditional
       let adr = this.asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
+      if(opByte !== 0xcd) return true;
       let skip = this.dis.getSkipCount(adr);
       if(skip !== undefined) {
         if(skip !== 0) {
@@ -171,7 +179,7 @@ export class Z80Handler implements OpcodeHandler {
     }
     if([0xc7, 0xd7, 0xe7, 0xf7, 0xcf, 0xdf, 0xef, 0xff].includes(opByte)) {
       // rst, add destination as start, handle skip bytes
-      let adr = (opByte & 0x38) >> 3;
+      let adr = opByte & 0x38;
       this.dis.addStart(adr, pc, true);
       let skip = this.dis.getSkipCount(adr);
       if(skip !== undefined) {
@@ -182,15 +190,15 @@ export class Z80Handler implements OpcodeHandler {
       }
       return true;
     }
-    if([0xc0, 0xd0, 0xe0, 0xf0, 0xc8, 0xd8, 0xe8, 0xf8, 0xc9].includes(opByte)) {
-      // ret, stop tracing
+    if(opByte === 0xc9) {
+      // ret (non-conditional), stop tracing
       return false;
     }
     if([0xc2, 0xd2, 0xe2, 0xf2, 0xca, 0xda, 0xea, 0xfa, 0xc3].includes(opByte)) {
-      // jmp, add address as start, stop tracing
+      // jmp, add address as start, stop tracing for non-conditional
       let adr = this.asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
-      return false;
+      return opByte !== 0xc3;
     }
     if(opByte === 0xe9) {
       // jmp (ind), warn and stop tracing
@@ -198,18 +206,95 @@ export class Z80Handler implements OpcodeHandler {
       return false;
     }
 
-    if(opStr.includes("ADW")) {
+    if(this.includesAny(opStr, ["ADR", "ADR"])) {
       let adrStart = idxPrefix ? 2 : 1;
       let adr = this.asWord(bytes[adrStart]!, bytes[adrStart + 1]!);
-      if(this.dis.isRomArea(adr)) {
+      if(opStr.includes("ADW") && this.dis.isRomArea(adr)) {
         this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
       }
+      this.dis.addLabel(adr, pc);
     }
 
     return true;
   }
 
+  private getIndexed(prefix?: number, displacement?: number): string {
+    if(prefix === undefined || displacement === undefined) {
+      return "hl";
+    }
+    let disp = (displacement < 0x80 ? displacement : -(0x100 - displacement));
+    let reg = prefix === 0xdd ? "ix" : "iy";
+    if(disp < 0) {
+      return `${reg} - $${hexStr(Math.abs(disp), 8)}`;
+    }
+    return `${reg} + $${hexStr(disp, 8)}`;
+  }
+
   disassembleOpcode(pc: number, bytes: number[]): string[] {
-    return ["op"];
+    if(bytes[0] === 0xed) {
+      // ed opcode
+      let opByte = bytes[1]!;
+      let opStr = edOpcodes[opByte]!;
+
+      let outStr = opStr;
+      if(opStr.includes("ADR")) outStr = outStr.replace("ADR", this.dis.getAdrRef(this.asWord(bytes[2]!, bytes[3]!), false));
+      if(opStr.includes("ADW")) outStr = outStr.replace("ADW", this.dis.getAdrRef(this.asWord(bytes[2]!, bytes[3]!), false));
+
+      if(opStr.startsWith("U")) {
+        let out = [`.db $ed, $${hexStr(opByte, 8)} ; ${outStr.slice(1)}`];
+        if(this.includesAny(opStr, ["ADR", "ADW"])) {
+          out.push(`.dw $${hexStr(this.asWord(bytes[2]!, bytes[3]!), 16)}`);
+        }
+        return out;
+      }
+
+      return [outStr];
+    }
+    if(bytes[0] === 0xcb) {
+      // bit opcode
+      let opByte = bytes[1]!;
+      return [`${bitOpcodes[opByte >> 3]} ${bitRegs[opByte & 0x7]}`];
+    }
+    let idxPrefix = bytes[0] === 0xdd || bytes[0] === 0xfd;
+    if(idxPrefix && bytes[1] === 0xcb) {
+      // idx-bit opcode
+      let opByte = bytes[3]!;
+      let idd = `(${this.getIndexed(bytes[0]!, bytes[2]!)})`;
+
+      let outStr = `${bitOpcodes[opByte >> 3]} ${idd}`;
+      if((opByte < 0x40 || opByte >= 0x80) && ((opByte & 0x7) !== 6)) {
+        outStr += `, ${bitRegs[opByte & 0x7]}`;
+      }
+
+      if((opByte >= 0x40 && opByte < 0x80) && ((opByte & 0x7) !== 6)) {
+        return [`.db $${hexStr(bytes[0]!, 8)}, $cb, $${hexStr(bytes[2]!, 8)}, $${hexStr(bytes[3]!, 8)} ; ${outStr}`];
+      }
+
+      return [outStr];
+    }
+    if(idxPrefix && bytes[1] === undefined) {
+      // unused idx-prefix
+      if(bytes[0] === 0xdd) return [".db $dd ; ignored ix-prefix"];
+      return [".db $fd ; ignored iy-prefix"];
+    }
+
+    let opByte = idxPrefix ? bytes[1]! : bytes[0]!;
+    let opStr = mainOpcodes[opByte]!;
+    let argStart = idxPrefix ? 2 : 1;
+    let iy = bytes[0] === 0xfd;
+    let outStr = opStr;
+
+    if(opStr.includes("REL")) outStr = outStr.replace("REL", this.dis.getAdrRef(this.getBranchTarget(pc, bytes[1]!), false));
+    if(opStr.includes("WRD")) outStr = outStr.replace("WRD", `$${hexStr(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), 16)}`);
+    if(opStr.includes("ADR")) outStr = outStr.replace("ADR", this.dis.getAdrRef(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
+    if(opStr.includes("ADW")) outStr = outStr.replace("ADW", this.dis.getAdrRef(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
+    if(opStr.includes("DST")) outStr = outStr.replace("DST", this.dis.getAdrRef(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
+    if(opStr.includes("BYT")) outStr = outStr.replace("BYT", `$${hexStr(bytes[(idxPrefix && opByte === 0x36) ? argStart + 1 : argStart]!, 8)}`);
+    if(opStr.includes("IDX")) outStr = outStr.replaceAll("IDX", idxPrefix ? (iy ? "iy" : "ix") : "hl");
+    if(opStr.includes("IDL")) outStr = outStr.replaceAll("IDL", idxPrefix ? (iy ? "iyl" : "ixl") : "l");
+    if(opStr.includes("IDH")) outStr = outStr.replaceAll("IDH", idxPrefix ? (iy ? "iyh" : "ixh") : "h");
+    if(opStr.includes("IDD")) outStr = outStr.replaceAll("IDD", this.getIndexed(idxPrefix ? bytes[0]! : undefined, bytes[2]));
+
+    return [outStr];
   }
 }

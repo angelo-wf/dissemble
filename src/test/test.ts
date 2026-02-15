@@ -23,13 +23,13 @@ function runTest(loc: string): void {
   let result = child_process.spawnSync("node", args, {timeout: 10000});
   // test return code (0)
   if(result.status !== 0) throw new Error("Disassembly failed! Error:\n" + result.stderr.toString("utf-8"));
-  console.log(result.stdout.toString("utf-8"));
+  // console.log(result.stdout.toString("utf-8"));
   // test matching output
   if(!compareFiles("testout/out.s", `${loc}/expected.s`)) throw new Error("Output files were not equal!");
 }
 
 const tests: string[] = [
-  "test", "test/m6502"
+  "test", "test/m6502", "test/z80"
 ];
 
 // create dirctory for test results

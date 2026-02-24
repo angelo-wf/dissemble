@@ -115,7 +115,7 @@ export class Z80Handler implements OpcodeHandler {
         return false;
       }
 
-      if(this.includesAny(opStr, ["ADR", "ADR"])) {
+      if(this.includesAny(opStr, ["ADR", "ADW"])) {
         let adr = this.asWord(bytes[2]!, bytes[3]!);
         if(opStr.includes("ADW") && this.dis.isRomArea(adr)) {
           this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
@@ -206,7 +206,7 @@ export class Z80Handler implements OpcodeHandler {
       return false;
     }
 
-    if(this.includesAny(opStr, ["ADR", "ADR"])) {
+    if(this.includesAny(opStr, ["ADR", "ADW"])) {
       let adrStart = idxPrefix ? 2 : 1;
       let adr = this.asWord(bytes[adrStart]!, bytes[adrStart + 1]!);
       if(opStr.includes("ADW") && this.dis.isRomArea(adr)) {

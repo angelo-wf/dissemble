@@ -78,6 +78,7 @@ function checkAdrType(obj: any, key: string): AdrType {
   throw new ConfigError("Unknown or no address type");
 }
 
+// parses the parsed JSON5 object into a config object, or throws if it is invalid
 export function parseConfig(input: any): Config {
   if(typeof input !== "object") throw new ConfigError("Not an object");
   let architecture = checkArchitecture(input, "architecture");
@@ -86,9 +87,9 @@ export function parseConfig(input: any): Config {
   let length = checkIntNumber(input, "length");
 
   let ramLabels = false;
-  if(input.ramLabels) ramLabels = checkBoolean(input, "ramLabels");
+  if(input.ramLabels !== undefined) ramLabels = checkBoolean(input, "ramLabels");
   let adrComments = false;
-  if(input.adrComments) adrComments = checkBoolean(input, "adrComments");
+  if(input.adrComments !== undefined) adrComments = checkBoolean(input, "adrComments");
 
   let nonRom: Config["nonRom"] = undefined;
   if(typeof input.nonRom === "object") {
@@ -106,7 +107,7 @@ export function parseConfig(input: any): Config {
     let parsedItem: AdrDef;
     if(t === AdrType.DATA) {
       let off: number | undefined = undefined;
-      if(item.off) off = checkIntNumber(item, "off");
+      if(item.off !== undefined) off = checkIntNumber(item, "off");
       parsedItem = {t, adr, off};
     } else if(t === AdrType.SKIP) {
       let skip = checkIntNumber(item, "skip");
@@ -114,9 +115,9 @@ export function parseConfig(input: any): Config {
     } else if(t === AdrType.POINTERS || t === AdrType.TABLE) {
       let count = checkIntNumber(item, "count");
       let adrh: number | undefined = undefined;
-      if(item.adrh) adrh = checkIntNumber(item, "adrh");
+      if(item.adrh !== undefined) adrh = checkIntNumber(item, "adrh");
       let off: number | undefined = undefined;
-      if(item.off) off = checkIntNumber(item, "off");
+      if(item.off !== undefined) off = checkIntNumber(item, "off");
       parsedItem = {t, adr, count, adrh, off};
     } else {
       parsedItem = {t, adr};

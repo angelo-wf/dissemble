@@ -25,14 +25,22 @@ export type ByteInfo = {
 };
 
 export interface OpcodeHandler {
-  // Assumes 2 bytes to be enough to determine opcode length
+  // get the opcode length, assumes 2 bytes to be enough to do this
   getOpcodeLength(byte1: number, byte2: number): number;
+  // handle tracing for the opcode bytes at pc
   traceOpcode(pc: number, bytes: number[]): boolean;
+  // disassembly the opcode bytes at pc, giving a list of lines to add to the disassembly
   disassembleOpcode(pc: number, bytes: number[]): string[];
 }
 
+// returns value as hex string with prepended zeroes according to size
 export function hexStr(val: number, size: number): string {
   return ("000" + val.toString(16)).slice(-(size / 4));
+}
+
+// return word value formed by b1 and b2
+export function asWord(b1: number, b2: number): number {
+  return b1 | (b2 << 8);
 }
 
 export class Disassembler {
@@ -139,6 +147,7 @@ export class Disassembler {
     }
   }
 
+  // disassemble
   disassemble(): string {
     // trace from starts
     this.trace();
@@ -204,40 +213,72 @@ export class Disassembler {
     return cont ? length : undefined;
   }
 
-  private checkLabelAdd(pc: number, origLoc: number): boolean {
-    if(this.byteInfo[pc]!.type === ByteType.NON_ROM) {
+  private checkLabelAdd(loc: number, origLoc: number): boolean {
+    if(this.byteInfo[loc]!.type === ByteType.NON_ROM) {
       return this.ramLabels;
     }
-    if(this.byteInfo[pc]!.type === ByteType.UNMAPPED) {
-      this.logWarning(`Access to unmapped area at $${hexStr(pc, 16)} from $${hexStr(origLoc, 16)}`);
+    if(this.byteInfo[loc]!.type === ByteType.UNMAPPED) {
+      this.logWarning(`Access to unmapped area at $${hexStr(loc, 16)} from $${hexStr(origLoc, 16)}`);
       return false;
     }
     return true;
   }
 
-  addLabel(pc: number, origLoc: number): void {
-    if(!this.checkLabelAdd(pc, origLoc)) return;
-    if(!this.labels.has(pc)) {
-      this.labels.set(pc, 0);
+  // adds a label for loc, with reason at origLoc
+  addLabel(loc: number, origLoc: number): void {
+    if(!this.checkLabelAdd(loc, origLoc)) return;
+    if(!this.labels.has(loc)) {
+      this.labels.set(loc, 0);
     }
   }
 
-  addStart(pc: number, origLoc: number, label: boolean): void {
-    let info = this.byteInfo[pc]!;
-    let pcStr = hexStr(pc, 16);
+  // adds a start for loc, with reason at origLoc, possibly adding a label for it as well
+  addStart(loc: number, origLoc: number, label: boolean): void {
+    let info = this.byteInfo[loc]!;
+    let pcStr = hexStr(loc, 16);
     let locStr = hexStr(origLoc, 16);
     if(info.type === ByteType.NON_ROM) return this.logWarning(`Jump to $${pcStr} in non-rom area from $${locStr}`);
     if(info.type === ByteType.UNMAPPED) return this.logWarning(`Jump to $${pcStr} outside mapped area from $${locStr}`);
     if(info.type === ByteType.DATA) return this.logWarning(`Jump to explicit stop $${pcStr} from $${locStr}`);
     if(dataTableTypes.includes(info.type)) return this.logWarning(`Jump to within pointer table at $${pcStr} from $${locStr}`);
-    if(label) this.addLabel(pc, origLoc);
-    this.codeStarts.push(pc);
+    if(label) this.addLabel(loc, origLoc);
+    this.codeStarts.push(loc);
   }
 
-  logWarning(warning: string): void {
+  private logWarning(warning: string): void {
     console.log(warning);
   }
 
+  // adds a log for an undocumented opcode at loc
+  logUndocumented(loc: number): void {
+    this.logWarning(`Undocumented opcode encountered at $${hexStr(loc, 16)}`);
+  }
+
+  // adds a log for an indirect jump at loc
+  logIndirect(loc: number): void {
+    this.logWarning(`Indirect jump at $${hexStr(loc, 16)}`);
+  }
+
+  // check if an write at loc (from origLoc) would be inside rom, and log if so
+  logPossibleRomWrite(loc: number, origLoc: number): void {
+    if(this.byteInfo[loc]!.type !== ByteType.NON_ROM) {
+      this.logWarning(`Write to rom area at $${hexStr(loc, 16)} from $${hexStr(origLoc, 16)}`);
+    }
+  }
+
+  // handle skip value for subroutine at loc called from pc with opLength opcode, returning if it should continue tracing
+  handleRoutineSkip(loc: number, pc: number, opLength: number): boolean {
+    let skip = this.routineSkips.get(loc);
+    if(skip !== undefined) {
+      if(skip !== 0) {
+        this.addStart(pc + opLength + skip, pc, false);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  // get an address reference, returning the label (+ offset) defined for it or the raw address (possibly as a byte)
   getAdrRef(adr: number, byte: boolean): string {
     if(this.labels.has(adr)) {
       let lbl;
@@ -251,14 +292,6 @@ export class Disassembler {
       return lbl;
     }
     return `${byte ? "<" : ""}$${hexStr(adr, byte ? 8 : 16)}`;
-  }
-
-  getSkipCount(adr: number): number | undefined {
-    return this.routineSkips.get(adr);
-  }
-
-  isRomArea(adr: number): boolean {
-    return this.byteInfo[adr]!.type !== ByteType.NON_ROM;
   }
 
   private getDataByte(byte: number, type: ByteType, word?: number): string {

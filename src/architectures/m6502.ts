@@ -1,4 +1,4 @@
-import { Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
+import { asWord, Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
 
 enum Am {
   IMP,
@@ -122,10 +122,6 @@ export class M6502Handler implements OpcodeHandler {
     return this.getLengthForMode(opcodeModes[byte1]!);
   }
 
-  private asWord(b1: number, b2: number): number {
-    return b1 | (b2 << 8);
-  }
-
   private getBranchTarget(pc: number, byte: number): number {
     let target = pc + 2 + (byte < 0x80 ? byte : -(0x100 - byte));
     return target & 0xffff;
@@ -134,7 +130,7 @@ export class M6502Handler implements OpcodeHandler {
   traceOpcode(pc: number, bytes: number[]): boolean {
     let opcode = bytes[0]!;
     if(opcodeTypes[opcode]! > 0) {
-      this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+      this.dis.logUndocumented(pc);
     }
 
     if([0x10, 0x30, 0x50, 0x70, 0x90, 0xb0, 0xd0, 0xf0].includes(opcode)) {
@@ -144,16 +140,9 @@ export class M6502Handler implements OpcodeHandler {
     }
     if(opcode === 0x20) {
       // jsr, add address as start, handle skip bytes
-      let adr = this.asWord(bytes[1]!, bytes[2]!);
+      let adr = asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
-      let skip = this.dis.getSkipCount(adr);
-      if(skip !== undefined) {
-        if(skip !== 0) {
-          this.dis.addStart(pc + 3 + skip, pc, false);
-        }
-        return false;
-      }
-      return true;
+      return this.dis.handleRoutineSkip(adr, pc, 3);
     }
     if(opcode === 0x40 || opcode === 0x60) {
       // rti/rts, stop tracing
@@ -161,22 +150,22 @@ export class M6502Handler implements OpcodeHandler {
     }
     if(opcode === 0x4c) {
       // jmp abs, add address as start, stop tracing
-      let adr = this.asWord(bytes[1]!, bytes[2]!);
+      let adr = asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
       return false;
     }
     if(opcode === 0x6c) {
       // jmp ind, warn and stop tracing
-      this.dis.logWarning(`Indirect jump at $${hexStr(pc, 16)}`);
+      this.dis.logIndirect(pc);
       return false;
     }
 
     let mode = opcodeModes[opcode]!;
     if(addressAccessModes.includes(mode)) {
       let length = this.getLengthForMode(mode);
-      let adr = length === 3 ? this.asWord(bytes[1]!, bytes[2]!) : bytes[1]!;
-      if(writingOpcodes.includes(opcodeStrings[opcode]!) && this.dis.isRomArea(adr)) {
-        this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
+      let adr = length === 3 ? asWord(bytes[1]!, bytes[2]!) : bytes[1]!;
+      if(writingOpcodes.includes(opcodeStrings[opcode]!)) {
+        this.dis.logPossibleRomWrite(adr, pc);
       }
       this.dis.addLabel(adr, pc);
     }
@@ -194,7 +183,7 @@ export class M6502Handler implements OpcodeHandler {
     let suffix = "";
 
     if(len === 3) {
-      let word = this.asWord(bytes[1]!, bytes[2]!);
+      let word = asWord(bytes[1]!, bytes[2]!);
       if(opMode === Am.ABS && absOpcodeZpForm.includes(opString) && word < 0x100) {
         suffix = ".a";
       }
@@ -214,10 +203,10 @@ export class M6502Handler implements OpcodeHandler {
       case Am.ZPY: outString = `${opString} ${this.dis.getAdrRef(bytes[1]!, true)}, y`; break;
       case Am.IZX: outString = `${opString} (${this.dis.getAdrRef(bytes[1]!, true)}, x)`; break;
       case Am.IZY: outString = `${opString} (${this.dis.getAdrRef(bytes[1]!, true)}), y`; break;
-      case Am.ABS: outString = `${opString}${suffix} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}`; break;
-      case Am.ABX: outString = `${opString}${suffix} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}, x`; break;
-      case Am.ABY: outString = `${opString}${suffix} ${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)}, y`; break;
-      case Am.IND: outString = `${opString} (${this.dis.getAdrRef(this.asWord(bytes[1]!, bytes[2]!), false)})`; break;
+      case Am.ABS: outString = `${opString}${suffix} ${this.dis.getAdrRef(asWord(bytes[1]!, bytes[2]!), false)}`; break;
+      case Am.ABX: outString = `${opString}${suffix} ${this.dis.getAdrRef(asWord(bytes[1]!, bytes[2]!), false)}, x`; break;
+      case Am.ABY: outString = `${opString}${suffix} ${this.dis.getAdrRef(asWord(bytes[1]!, bytes[2]!), false)}, y`; break;
+      case Am.IND: outString = `${opString} (${this.dis.getAdrRef(asWord(bytes[1]!, bytes[2]!), false)})`; break;
       case Am.REL: outString = `${opString} ${this.dis.getAdrRef(this.getBranchTarget(pc, bytes[1]!), false)}`; break;
     }
 
@@ -225,7 +214,7 @@ export class M6502Handler implements OpcodeHandler {
       // repeat encoding, output as db/dw statements
       let out = [`.db $${hexStr(opcode, 8)} ; ${outString}`];
       if(len > 1) {
-        out.push(len === 3 ? `.dw $${hexStr(this.asWord(bytes[1]!, bytes[2]!), 16)}` : `.db $${hexStr(bytes[1]!, 8)}`);
+        out.push(len === 3 ? `.dw $${hexStr(asWord(bytes[1]!, bytes[2]!), 16)}` : `.db $${hexStr(bytes[1]!, 8)}`);
       }
       return out;
     }

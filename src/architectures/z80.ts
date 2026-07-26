@@ -1,4 +1,4 @@
-import { Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
+import { asWord, Disassembler, hexStr, OpcodeHandler } from "../disassembler.js";
 
 const mainOpcodes: string[] = [
   "nop",         "ld bc, WRD",  "ld (bc), a",    "inc bc",       "inc b",        "dec b",       "ld b, BYT",     "rlca",        "ex af, af' ;'", "add IDX, bc",  "ld a, (bc)",    "dec bc",      "inc c",        "dec c",       "ld c, BYT",    "rrca",
@@ -89,25 +89,18 @@ export class Z80Handler implements OpcodeHandler {
     return length;
   }
 
-  private asWord(b1: number, b2: number): number {
-    return b1 | (b2 << 8);
-  }
-
   private getBranchTarget(pc: number, byte: number): number {
     let target = pc + 2 + (byte < 0x80 ? byte : -(0x100 - byte));
     return target & 0xffff;
   }
 
-  // TODO: handle undocumented-log, indirect-log, rom-write-log (with check) in disassembler self
-  // TODO: handle skip as function in disassembler
-  // TODO: generic 'asWord'-function (like 'hexStr')
   traceOpcode(pc: number, bytes: number[]): boolean {
     if(bytes[0] === 0xed) {
       // ed opcode
       let opByte = bytes[1]!;
       let opStr = edOpcodes[opByte]!;
       if(opByte === 0x70 || opByte === 0x71 || opStr.startsWith("U")) {
-        this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+        this.dis.logUndocumented(pc);
       }
 
       if([0x45, 0x55, 0x65, 0x75, 0x4d, 0x5d, 0x6d, 0x7d].includes(opByte)) {
@@ -116,9 +109,9 @@ export class Z80Handler implements OpcodeHandler {
       }
 
       if(this.includesAny(opStr, ["ADR", "ADW"])) {
-        let adr = this.asWord(bytes[2]!, bytes[3]!);
-        if(opStr.includes("ADW") && this.dis.isRomArea(adr)) {
-          this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
+        let adr = asWord(bytes[2]!, bytes[3]!);
+        if(opStr.includes("ADW")) {
+          this.dis.logPossibleRomWrite(adr, pc);
         }
         this.dis.addLabel(adr, pc);
       }
@@ -129,7 +122,7 @@ export class Z80Handler implements OpcodeHandler {
       // bit opcode
       let opByte = bytes[1]!;
       if(opByte >= 0x30 && opByte < 0x38) {
-        this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+        this.dis.logUndocumented(pc);
       }
 
       return true;
@@ -139,7 +132,7 @@ export class Z80Handler implements OpcodeHandler {
       // idx-bit opcode
       let opByte = bytes[3]!;
       if((opByte & 0x7) !== 0x6 || opByte === 0x36) {
-        this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+        this.dis.logUndocumented(pc);
       }
 
       return true;
@@ -147,7 +140,7 @@ export class Z80Handler implements OpcodeHandler {
 
     if(idxPrefix && bytes[1] === undefined) {
       // unused idx-prefix
-      this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+      this.dis.logUndocumented(pc);
       return true;
     }
 
@@ -155,7 +148,7 @@ export class Z80Handler implements OpcodeHandler {
     let opStr = mainOpcodes[opByte]!;
 
     if(idxPrefix && this.includesAny(opStr, ["IDH", "IDL"])) {
-      this.dis.logWarning(`Undocumented opcode encountered at $${hexStr(pc, 16)}`);
+      this.dis.logUndocumented(pc);
     }
 
     if([0x10, 0x20, 0x30, 0x18, 0x28, 0x38].includes(opByte)) {
@@ -165,30 +158,16 @@ export class Z80Handler implements OpcodeHandler {
     }
     if([0xc4, 0xd4, 0xe4, 0xf4, 0xcc, 0xdc, 0xec, 0xfc, 0xcd].includes(opByte)) {
       // call, add address as start, handle skip bytes for non-conditional
-      let adr = this.asWord(bytes[1]!, bytes[2]!);
+      let adr = asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
       if(opByte !== 0xcd) return true;
-      let skip = this.dis.getSkipCount(adr);
-      if(skip !== undefined) {
-        if(skip !== 0) {
-          this.dis.addStart(pc + 3 + skip, pc, false);
-        }
-        return false;
-      }
-      return true;
+      return this.dis.handleRoutineSkip(adr, pc, 3);
     }
     if([0xc7, 0xd7, 0xe7, 0xf7, 0xcf, 0xdf, 0xef, 0xff].includes(opByte)) {
       // rst, add destination as start, handle skip bytes
       let adr = opByte & 0x38;
       this.dis.addStart(adr, pc, true);
-      let skip = this.dis.getSkipCount(adr);
-      if(skip !== undefined) {
-        if(skip !== 0) {
-          this.dis.addStart(pc + 1 + skip, pc, false);
-        }
-        return false;
-      }
-      return true;
+      return this.dis.handleRoutineSkip(adr, pc, 1);
     }
     if(opByte === 0xc9) {
       // ret (non-conditional), stop tracing
@@ -196,21 +175,21 @@ export class Z80Handler implements OpcodeHandler {
     }
     if([0xc2, 0xd2, 0xe2, 0xf2, 0xca, 0xda, 0xea, 0xfa, 0xc3].includes(opByte)) {
       // jmp, add address as start, stop tracing for non-conditional
-      let adr = this.asWord(bytes[1]!, bytes[2]!);
+      let adr = asWord(bytes[1]!, bytes[2]!);
       this.dis.addStart(adr, pc, true);
       return opByte !== 0xc3;
     }
     if(opByte === 0xe9) {
       // jmp (ind), warn and stop tracing
-      this.dis.logWarning(`Indirect jump at $${hexStr(pc, 16)}`);
+      this.dis.logIndirect(pc);
       return false;
     }
 
     if(this.includesAny(opStr, ["ADR", "ADW"])) {
       let adrStart = idxPrefix ? 2 : 1;
-      let adr = this.asWord(bytes[adrStart]!, bytes[adrStart + 1]!);
-      if(opStr.includes("ADW") && this.dis.isRomArea(adr)) {
-        this.dis.logWarning(`Write to rom area at $${hexStr(adr, 16)} from $${hexStr(pc, 16)}`);
+      let adr = asWord(bytes[adrStart]!, bytes[adrStart + 1]!);
+      if(opStr.includes("ADW")) {
+        this.dis.logPossibleRomWrite(adr, pc);
       }
       this.dis.addLabel(adr, pc);
     }
@@ -237,13 +216,13 @@ export class Z80Handler implements OpcodeHandler {
       let opStr = edOpcodes[opByte]!;
 
       let outStr = opStr;
-      if(opStr.includes("ADR")) outStr = outStr.replace("ADR", this.dis.getAdrRef(this.asWord(bytes[2]!, bytes[3]!), false));
-      if(opStr.includes("ADW")) outStr = outStr.replace("ADW", this.dis.getAdrRef(this.asWord(bytes[2]!, bytes[3]!), false));
+      if(opStr.includes("ADR")) outStr = outStr.replace("ADR", this.dis.getAdrRef(asWord(bytes[2]!, bytes[3]!), false));
+      if(opStr.includes("ADW")) outStr = outStr.replace("ADW", this.dis.getAdrRef(asWord(bytes[2]!, bytes[3]!), false));
 
       if(opStr.startsWith("U")) {
         let out = [`.db $ed, $${hexStr(opByte, 8)} ; ${outStr.slice(1)}`];
         if(this.includesAny(opStr, ["ADR", "ADW"])) {
-          out.push(`.dw $${hexStr(this.asWord(bytes[2]!, bytes[3]!), 16)}`);
+          out.push(`.dw $${hexStr(asWord(bytes[2]!, bytes[3]!), 16)}`);
         }
         return out;
       }
@@ -285,10 +264,10 @@ export class Z80Handler implements OpcodeHandler {
     let outStr = opStr;
 
     if(opStr.includes("REL")) outStr = outStr.replace("REL", this.dis.getAdrRef(this.getBranchTarget(pc, bytes[1]!), false));
-    if(opStr.includes("WRD")) outStr = outStr.replace("WRD", `$${hexStr(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), 16)}`);
-    if(opStr.includes("ADR")) outStr = outStr.replace("ADR", this.dis.getAdrRef(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
-    if(opStr.includes("ADW")) outStr = outStr.replace("ADW", this.dis.getAdrRef(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
-    if(opStr.includes("DST")) outStr = outStr.replace("DST", this.dis.getAdrRef(this.asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
+    if(opStr.includes("WRD")) outStr = outStr.replace("WRD", `$${hexStr(asWord(bytes[argStart]!, bytes[argStart + 1]!), 16)}`);
+    if(opStr.includes("ADR")) outStr = outStr.replace("ADR", this.dis.getAdrRef(asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
+    if(opStr.includes("ADW")) outStr = outStr.replace("ADW", this.dis.getAdrRef(asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
+    if(opStr.includes("DST")) outStr = outStr.replace("DST", this.dis.getAdrRef(asWord(bytes[argStart]!, bytes[argStart + 1]!), false));
     if(opStr.includes("BYT")) outStr = outStr.replace("BYT", `$${hexStr(bytes[(idxPrefix && opByte === 0x36) ? argStart + 1 : argStart]!, 8)}`);
     if(opStr.includes("IDX")) outStr = outStr.replaceAll("IDX", idxPrefix ? (iy ? "iy" : "ix") : "hl");
     if(opStr.includes("IDL")) outStr = outStr.replaceAll("IDL", idxPrefix ? (iy ? "iyl" : "ixl") : "l");

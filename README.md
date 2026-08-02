@@ -1,6 +1,8 @@
 # Dissemble
 
-A WIP tracing disassembler (currently) supporting the 6502 and Z80, written in TypeScript.
+A tracing disassembler (currently) supporting the 6502, Z80 and SPC700, written in TypeScript.
+
+SPC700 is still WIP, untested and does not handle the P flag (assumed cleared) or absolute addresses with values below $100.
 
 ## Compilng and running
 
@@ -28,7 +30,7 @@ JSON5 is used to make editing directly easier, due to support for comments and h
 Example (format not final):
 ```javascript
 {
-  // Architecture to use, 'm6502' and 'z80' are currently supported
+  // Architecture to use, 'm6502', 'z80' and 'spc700' are currently supported
   architecture: "m6502",
   // Offset in file to start loading from
   fileOffset: 0x10,
@@ -80,6 +82,11 @@ No labels will be generated for locations outside the disassembled area, except 
 Warning are thrown for various cases, like accesses to outside the mapped area or writes to ROM.
 
 Output should re-assemble with my assembler [Elsemble](https://github.com/angelo-wf/elsemble) (or other assemblers, possibly with some syntax-changes) to an exact match for the indicated area to disassemble.
+
+## Future work
+
+- Add support for keeping track of the P-flag for SPC700
+- Add support for the 65816. This is likely to go through a different path entirely, due to the 24-bit address space and values (bank, direct page, register sizes) that needs to be tracked, as well as loading a file-chunk per bank and emitting multiple output files with directives to set state
 
 ## License
 

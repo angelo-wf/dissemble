@@ -1,4 +1,5 @@
 import { M6502Handler } from "./architectures/m6502.js";
+import { Spc700Handler } from "./architectures/spc700.js";
 import { Z80Handler } from "./architectures/z80.js";
 import { AdrType, Architecture, Config } from "./config.js";
 
@@ -144,6 +145,7 @@ export class Disassembler {
     switch(config.architecture) {
       case Architecture.M6502: this.opcodeHandler = new M6502Handler(this); break;
       case Architecture.Z80: this.opcodeHandler = new Z80Handler(this); break;
+      case Architecture.SPC700: this.opcodeHandler = new Spc700Handler(this); break;
     }
   }
 

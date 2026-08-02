@@ -1,7 +1,8 @@
 
 export enum Architecture {
   M6502 = "m6502",
-  Z80 = "z80"
+  Z80 = "z80",
+  SPC700 = "spc700"
 };
 
 export enum AdrType {

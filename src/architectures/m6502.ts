@@ -155,7 +155,9 @@ export class M6502Handler implements OpcodeHandler {
       return false;
     }
     if(opcode === 0x6c) {
-      // jmp ind, warn and stop tracing
+      // jmp ind, warn and stop tracing, add address as label
+      let adr = asWord(bytes[1]!, bytes[2]!);
+      this.dis.addLabel(adr, pc);
       this.dis.logIndirect(pc);
       return false;
     }

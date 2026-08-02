@@ -9,14 +9,14 @@ export enum ByteType {
   CODE_S,
   CODE_P,
   DATA,
-  DATA_LB,
-  DATA_HB,
-  DATA_LW,
-  DATA_HW
+  PTR_LB,
+  PTR_HB,
+  PTR_LW,
+  PTR_HW
 };
 
 const dataTableTypes: ByteType[] = [
-  ByteType.DATA_LB, ByteType.DATA_HB, ByteType.DATA_LW, ByteType.DATA_HW
+  ByteType.PTR_LB, ByteType.PTR_HB, ByteType.PTR_LW, ByteType.PTR_HW
 ];
 
 export type ByteInfo = {
@@ -111,12 +111,12 @@ export class Disassembler {
           for(let i = 0; i < adr.count; i++) {
             let target: number;
             if(!hasAdrh) {
-              this.byteInfo[adr.adr + i * 2]!.type = ByteType.DATA_LW;
-              this.byteInfo[adr.adr + i * 2 + 1]!.type = ByteType.DATA_HW;
+              this.byteInfo[adr.adr + i * 2]!.type = ByteType.PTR_LW;
+              this.byteInfo[adr.adr + i * 2 + 1]!.type = ByteType.PTR_HW;
               target = this.data[adr.adr + i * 2]! | (this.data[adr.adr + i * 2 + 1]! << 8);
             } else {
-              this.byteInfo[adr.adr + i]!.type = ByteType.DATA_LB;
-              this.byteInfo[adr.adrh! + i]!.type = ByteType.DATA_HB;
+              this.byteInfo[adr.adr + i]!.type = ByteType.PTR_LB;
+              this.byteInfo[adr.adrh! + i]!.type = ByteType.PTR_HB;
               target = this.data[adr.adr + i]! | (this.data[adr.adrh! + i]! << 8);
               this.byteInfo[adr.adr + i]!.word = target;
               this.byteInfo[adr.adrh! + i]!.word = target;
@@ -162,6 +162,12 @@ export class Disassembler {
         let next = this.traceOpcode(start);
         if(next === undefined) break;
         start += next;
+      }
+    }
+    // set all remanining unknown bytes to be data
+    for(let i = this.mapOffset; i < this.mapOffset + this.mapLength; i++) {
+      if(this.byteInfo[i]!.type === ByteType.UNKNOWN) {
+        this.byteInfo[i]!.type = ByteType.DATA;
       }
     }
   }
@@ -295,11 +301,11 @@ export class Disassembler {
   }
 
   private getDataByte(byte: number, type: ByteType, word?: number): string {
-    if(type === ByteType.DATA_LB) {
+    if(type === ByteType.PTR_LB) {
       let adr = (word! & 0xff00) | byte;
       return this.getAdrRef(adr, false);
     }
-    if(type === ByteType.DATA_HB) {
+    if(type === ByteType.PTR_HB) {
       let adr = (word! & 0xff) | (byte << 8);
       return this.getAdrRef(adr, false);
     }
@@ -345,7 +351,7 @@ export class Disassembler {
           if(i !== opcodeStrings.length - 1) output += "\n";
         }
         pc += length;
-      } else if(type === ByteType.DATA_LW) {
+      } else if(type === ByteType.PTR_LW) {
         // check for label one spot ahead in word
         if(this.labels.get(pc + 1) === 0) {
           output += `_${hexStr(pc + 1, 16)} = * + 1\n`;
@@ -358,8 +364,8 @@ export class Disassembler {
       } else {
         // print first byte, or lb/hb of word for split table
         let dir = ".db";
-        if(type === ByteType.DATA_LB) dir = ".dlb";
-        if(type === ByteType.DATA_HB) dir = ".dhb";
+        if(type === ByteType.PTR_LB) dir = ".dlb";
+        if(type === ByteType.PTR_HB) dir = ".dhb";
         output += `  ${dir} ${this.getDataByte(this.data[pc]!, type, info.word)}`;
         pc++;
         // and print up to 7 more, provided no labels or switch to different type

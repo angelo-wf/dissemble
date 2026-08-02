@@ -214,7 +214,11 @@ export class M6502Handler implements OpcodeHandler {
       // repeat encoding, output as db/dw statements
       let out = [`.db $${hexStr(opcode, 8)} ; ${outString}`];
       if(len > 1) {
-        out.push(len === 3 ? `.dw $${hexStr(asWord(bytes[1]!, bytes[2]!), 16)}` : `.db $${hexStr(bytes[1]!, 8)}`);
+        if(len === 3) {
+          out.push(`.dw ${this.dis.getAdrRef(asWord(bytes[1]!, bytes[2]!), false)}`);
+        } else {
+          out.push(`.db ${opMode == Am.IMM ? "$" + hexStr(bytes[1]!, 8) : this.dis.getAdrRef(bytes[1]!, true)}`);
+        }
       }
       return out;
     }

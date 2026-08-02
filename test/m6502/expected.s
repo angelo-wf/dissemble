@@ -85,25 +85,25 @@ _802b:
   nop _0012, x
   bit _0012
   .db $34 ; nop _0012, x
-  .db $12
+  .db _0012
   .db $44 ; nop _0012
-  .db $12
+  .db _0012
   .db $54 ; nop _0012, x
-  .db $12
+  .db _0012
   .db $64 ; nop _0012
-  .db $12
+  .db _0012
   .db $74 ; nop _0012, x
-  .db $12
+  .db _0012
   sty _0012
   sty _0012, x
   ldy _0012
   ldy _0012, x
   cpy _0012
   .db $d4 ; nop _0012, x
-  .db $12
+  .db _0012
   cpx _0012
   .db $f4 ; nop _0012, x
-  .db $12
+  .db _0012
   ora _0012
   ora _0012, x
   and _0012
@@ -223,25 +223,25 @@ _802b:
   nop _1234, x
   bit _1234
   .db $3c ; nop _1234, x
-  .dw $1234
+  .dw _1234
   jmp _819f
 _817e:
   .db $5c ; nop _1234, x
-  .dw $1234
+  .dw _1234
   jmp (_1234)
 _8184:
   .db $7c ; nop _1234, x
-  .dw $1234
+  .dw _1234
   sty _1234
   shy _1234, x
   ldy _1234
   ldy _1234, x
   cpy _1234
   .db $dc ; nop _1234, x
-  .dw $1234
+  .dw _1234
   cpx _1234
   .db $fc ; nop _1234, x
-  .dw $1234
+  .dw _1234
 _819f:
   ora _1234
   ora _1234, x

@@ -384,7 +384,7 @@ _019c:
   ld (_89ab), bc
   ld (_89ab), de
   .db $ed, $63 ; ld (_89ab), hl
-  .dw $89ab
+  .dw _89ab
   ld (_89ab), sp
   neg
   .db $ed, $54 ; neg
@@ -421,7 +421,7 @@ _0262:
   ld bc, (_89ab)
   ld de, (_89ab)
   .db $ed, $6b ; ld hl, (_89ab)
-  .dw $89ab
+  .dw _89ab
   ld sp, (_89ab)
   .db $ed, $4c ; neg
   .db $ed, $5c ; neg

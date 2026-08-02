@@ -55,14 +55,15 @@ Example (format not final):
     // (e.g. for data accessed with an offset, to prevent these labels to be placed at the wrong spot)
     {t: "data", adr: 0xc231},
     {t: "data", adr: 0xc532, off: 12},
-    // Indicates that when the subroutine at adr is called, it should skip that amount of bytes.
-    // 0 indicates that the call does not return at all and to stop disassemly there
+    // Indicates that when the subroutine at adr is called, it should skip that amount of bytes after the calling opcode.
+    // 0 indicates that the call does not return at all and to stop disassemly after the call
     // (e.g. for routines that modify the return address on the stack)
     {t: "skip", adr: 0xd103, skip: 0},
     {t: "skip", adr: 0xc342, skip: 2},
     // Indicate a table of count subroutine pointers at adr, each a word, each of which will be disassembled from.
     // If adrh is specified, idicates a table split in low and high bytes instead, with the high bytes at adrh.
-    // If off is specified, indicates that the values in the table need this offset for the actual locations
+    // If off is specified, indicates that the values in the table need this offset for the actual locations.
+    // A label is added for the table itself as well
     {t: "pointers", adr: 0xd543, count: 5},
     {t: "pointers", adr: 0xd571, adrh: 0xd579, count: 8, off: 1},
     // Indicates a table of data pointers. Format is further the same as for subroutine pointers

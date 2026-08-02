@@ -222,7 +222,7 @@ export class Z80Handler implements OpcodeHandler {
       if(opStr.startsWith("U")) {
         let out = [`.db $ed, $${hexStr(opByte, 8)} ; ${outStr.slice(1)}`];
         if(this.includesAny(opStr, ["ADR", "ADW"])) {
-          out.push(`.dw $${hexStr(asWord(bytes[2]!, bytes[3]!), 16)}`);
+          out.push(`.dw ${this.dis.getAdrRef(asWord(bytes[2]!, bytes[3]!), false)}`);
         }
         return out;
       }

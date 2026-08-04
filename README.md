@@ -2,7 +2,7 @@
 
 A tracing disassembler (currently) supporting the 6502, Z80 and SPC700, written in TypeScript.
 
-SPC700 is still WIP, untested and does not handle the P flag (assumed cleared) or absolute addresses with values below $100.
+SPC700 is still WIP, untested and does not handle the P flag (assumed cleared).
 
 ## Compilng and running
 

@@ -122,7 +122,7 @@ export class Disassembler {
               this.byteInfo[adr.adr + i]!.word = target;
               this.byteInfo[adr.adrh! + i]!.word = target;
             }
-            let valid = this.checkLabelAdd(target, adr.adr + i * (hasAdrh ? 1 : 2));
+            let valid = this.checkLabelAdd(target + offset, adr.adr + i * (hasAdrh ? 1 : 2));
             if(valid) {
               this.labels.set(target, offset);
               if(offset) this.labels.set(target + offset, 0);

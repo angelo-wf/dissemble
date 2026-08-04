@@ -40,7 +40,7 @@ ld sp, $1234
 ld (bc), a
 ld (de), a
 ld ($89ab), hl
-ld ($89ab), a
+ld ($89ac), a
 inc bc
 inc de
 inc hl
@@ -74,7 +74,7 @@ add hl, sp
 ld a, (bc)
 ld a, (de)
 ld hl, ($89ab)
-ld a, ($89ab)
+ld a, ($89ad)
 dec bc
 dec de
 dec hl
@@ -316,7 +316,7 @@ sbc hl, de
 sbc hl, hl
 sbc hl, sp
 ld ($89ab), bc
-ld ($89ab), de
+ld ($89ae), de
 .db $ed, $63, $ab, $89
 ld ($89ab), sp
 neg
@@ -352,7 +352,7 @@ adc hl, de
 adc hl, hl
 adc hl, sp
 ld bc, ($89ab)
-ld de, ($89ab)
+ld de, ($89af)
 .db $ed, $6b, $ab, $89
 ld sp, ($89ab)
 .db $ed, $4c

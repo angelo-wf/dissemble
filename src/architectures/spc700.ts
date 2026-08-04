@@ -50,24 +50,24 @@ const opcodeModes: Am[] = [
   Am.REL, Am.IMP, Am.DPG, Am.DPR, Am.DPG, Am.ABS, Am.ABS, Am.DPG, Am.DPG, Am.DPG, Am.DPD, Am.DPG, Am.IMP, Am.IMP, Am.REL, Am.IMP
 ];
 
-// 0: no access, 1: read, 2: (read and) write
+// 0: no access, 1: read, 2: (read and) write, +4: abs with dp equivalent
 const opcodeType: number[] = [
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 2, 1, 2, 2, 0, 2, 0,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 0, 2, 2, 0, 0, 1, 0,
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 2, 1, 2, 2, 0, 1, 0,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 0, 2, 2, 0, 0, 1, 0,
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 2, 1, 2, 2, 0, 2, 0,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 0, 1, 2, 0, 0, 1, 0,
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 2, 1, 2, 2, 0, 2, 0,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 0, 1, 2, 0, 0, 1, 0,
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 2, 1, 2, 2, 0, 0, 2,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 0, 1, 2, 0, 0, 0, 0,
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 2, 1, 2, 2, 0, 0, 0,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 0, 1, 2, 0, 0, 0, 0,
-  0, 0, 2, 1, 2, 2, 0, 2, 0, 2, 2, 2, 2, 0, 0, 0,
-  0, 0, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 1, 0,
-  0, 0, 2, 1, 1, 1, 0, 1, 0, 1, 2, 1, 1, 0, 0, 0,
-  0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 2, 1, 2, 6, 0, 2, 0,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 0, 2, 2, 0, 0, 5, 0,
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 2, 1, 2, 6, 0, 1, 0,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 0, 2, 2, 0, 0, 1, 0,
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 2, 1, 2, 6, 0, 2, 0,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 0, 1, 2, 0, 0, 5, 0,
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 2, 1, 2, 6, 0, 2, 0,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 0, 1, 2, 0, 0, 1, 0,
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 2, 1, 2, 6, 0, 0, 2,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 0, 1, 2, 0, 0, 0, 0,
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 2, 1, 2, 6, 0, 0, 0,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 0, 1, 2, 0, 0, 0, 0,
+  0, 0, 2, 1, 2, 6, 0, 2, 0, 6, 2, 2, 6, 0, 0, 0,
+  0, 0, 2, 1, 2, 6, 2, 2, 2, 2, 2, 2, 0, 0, 1, 0,
+  0, 0, 2, 1, 1, 5, 0, 1, 0, 5, 2, 1, 5, 0, 0, 0,
+  0, 0, 2, 1, 1, 5, 1, 1, 1, 1, 2, 1, 0, 0, 0, 0
 ];
 
 export class Spc700Handler implements OpcodeHandler {
@@ -149,7 +149,7 @@ export class Spc700Handler implements OpcodeHandler {
     }
 
     let mode = opcodeModes[opcode]!;
-    let type = opcodeType[opcode]!;
+    let type = opcodeType[opcode]! & 3;
     if(mode === Am.DPI) {
       this.dis.logPossibleRomWrite(bytes[2]!, pc);
       this.dis.addLabel(bytes[2]!, pc);
@@ -173,13 +173,13 @@ export class Spc700Handler implements OpcodeHandler {
     return true;
   }
 
-  // TODO: handle abs with value < $100
   // TODO: tests
-  // TODO: better tests to prevent passing due to other opcodes creating label (e.g. 6502 indirect not creating a label)
   disassembleOpcode(pc: number, bytes: number[]): string[] {
     let opString = opcodeStrings[bytes[0]!]!;
     let mode = opcodeModes[bytes[0]!];
+    let absWithZp = (opcodeType[bytes[0]!]! >> 2) == 1;
     let outString = opString;
+    let extra = "";
 
     if(opString.includes("V1")) {
       let replacement = "";
@@ -194,6 +194,9 @@ export class Spc700Handler implements OpcodeHandler {
         case Am.REL: replacement = this.dis.getAdrRef(this.getBranchTarget(pc, bytes[1]!, 2), false); break;
       }
       outString = outString.replace("V1", replacement);
+      if(mode === Am.ABS && absWithZp) {
+        if(asWord(bytes[1]!, bytes[2]!) < 0x100) extra = ".a";
+      }
     }
     if(opString.includes("V2")) {
       let replacement = "";
@@ -205,6 +208,9 @@ export class Spc700Handler implements OpcodeHandler {
       }
       outString = outString.replace("V2", replacement);
     }
+    let parts = outString.split(" ");
+    parts[0] = parts[0] + extra;
+    outString = parts.join(" ");
 
     return [outString];
   }

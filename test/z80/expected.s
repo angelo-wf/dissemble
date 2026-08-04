@@ -1,6 +1,10 @@
 .org $0000
 
 _89ab = $89ab
+_89ac = $89ac
+_89ad = $89ad
+_89ae = $89ae
+_89af = $89af
 
 _0000:
   ret
@@ -56,7 +60,7 @@ _0067:
   ld (bc), a
   ld (de), a
   ld (_89ab), hl
-  ld (_89ab), a
+  ld (_89ac), a
   inc bc
   inc de
   inc hl
@@ -90,7 +94,7 @@ _009a:
   ld a, (bc)
   ld a, (de)
   ld hl, (_89ab)
-  ld a, (_89ab)
+  ld a, (_89ad)
   dec bc
   dec de
   dec hl
@@ -382,7 +386,7 @@ _019c:
   sbc hl, hl
   sbc hl, sp
   ld (_89ab), bc
-  ld (_89ab), de
+  ld (_89ae), de
   .db $ed, $63 ; ld (_89ab), hl
   .dw _89ab
   ld (_89ab), sp
@@ -419,7 +423,7 @@ _0262:
   adc hl, hl
   adc hl, sp
   ld bc, (_89ab)
-  ld de, (_89ab)
+  ld de, (_89af)
   .db $ed, $6b ; ld hl, (_89ab)
   .dw _89ab
   ld sp, (_89ab)

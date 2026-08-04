@@ -30,8 +30,8 @@ target1:
 
 ora ($12, x)
 ora ($12), y
-and ($12, x)
-and ($12), y
+and ($13, x)
+and ($14), y
 eor ($12, x)
 eor ($12), y
 adc ($12, x)
@@ -81,14 +81,14 @@ isc ($12), y
 
 nop $12
 nop $12, x
-bit $12
+bit $15
 .db $34, $12
 .db $44, $12
 .db $54, $12
 .db $64, $12
 .db $74, $12
 sty $12
-sty $12, x
+sty $16, x
 ldy $12
 ldy $12, x
 cpy $12
@@ -124,7 +124,7 @@ ror $12, x
 stx $12
 stx $12, y
 ldx $12
-ldx $12, y
+ldx $17, y
 dec $12
 dec $12, x
 inc $12
@@ -167,7 +167,7 @@ sed
 ora #$12
 ora $1234, y
 and #$12
-and $1234, y
+and $1235, y
 eor #$12
 eor $1234, y
 adc #$12
@@ -217,16 +217,16 @@ isc $1234, y
 
 nop $1234
 nop $1234, x
-bit $1234
+bit $1236
 .db $3c, $34, $12
 jmp target2
 start4:
 .db $5c, $34, $12
-jmp ($1234)
+jmp ($1237)
 start5:
 .db $7c, $34, $12
 sty $1234
-shy $1234, x
+shy $1238, x
 ldy $1234
 ldy $1234, x
 cpy $1234

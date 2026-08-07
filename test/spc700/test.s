@@ -290,6 +290,40 @@ stop
 start7:
 target4:
 
+; absolute opcodes with arguments < $100
+
+or.a a, $12
+or.a a, $12 + x
+and.a a, $12
+and.a a, $12 + x
+eor.a a, $12
+eor.a a, $12 + x
+cmp.a a, $12
+cmp.a a, $12 + x
+adc.a a, $12
+adc.a a, $12 + x
+sbc.a a, $12
+sbc.a a, $12 + x
+mov.a $12, a
+mov.a $12 + x, a
+mov.a a, $12
+mov.a a, $12 + x
+
+mov.a $12, x
+mov.a $12, y
+mov.a x, $12
+mov.a y, $12
+
+asl.a $12
+rol.a $12
+lsr.a $12
+ror.a $12
+inc.a $12
+dec.a $12
+
+cmp.a x, $12
+cmp.a y, $12
+
 jmp start
 
 .pad $8ff0

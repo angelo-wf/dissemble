@@ -29,7 +29,7 @@ function runTest(loc: string): void {
 }
 
 const tests: string[] = [
-  "test", "test/m6502", "test/z80"
+  "test", "test/m6502", "test/z80", "test/spc700"
 ];
 
 // create dirctory for test results

@@ -21,7 +21,7 @@ const opcodeStrings: string[] = [
   "bvc V1", "tcall 5",  "clr1 V1,2", "bbc V1,2, V2", "eor a, V1 + x", "eor a, V1 + x", "eor a, V1 + y", "eor a, (V1) + y", "eor V1, #V2", "eor (x), (y)",  "cmpw ya, V1",    "lsr V1 + x",    "lsr a",     "mov x, a",   "cmp y, V1",       "jmp V1",
   "clrc",   "tcall 6",  "set1 V1,3", "bbs V1,3, V2", "cmp a, V1",     "cmp a, V1",     "cmp a, (x)",    "cmp a, (V1 + x)", "cmp a, #V1",  "cmp V1, V2",    "and1 c, /V1,V2", "ror V1",        "ror V1",    "push y",     "dbnz V1, V2",     "ret",
   "bvs V1", "tcall 7",  "clr1 V1,3", "bbc V1,3, V2", "cmp a, V1 + x", "cmp a, V1 + x", "cmp a, V1 + y", "cmp a, (V1) + y", "cmp V1, #V2", "cmp (x), (y)",  "addw ya, V1",    "ror V1 + x",    "ror a",     "mov a, x",   "cmp y, V1",       "reti",
-  "setc",   "tcall 8",  "set1 V1,4", "bbs V1,4, V2", "adc a, V1",     "adc a, V1",     "adc a, (x)",    "adc a, (V1 + x)", "adc a, #V1",  "adc V1, V2",    "eor1, c, V1,V2", "dec V1",        "dec V1",    "mov y, #V1", "pop psw",         "mov V1, #V2",
+  "setc",   "tcall 8",  "set1 V1,4", "bbs V1,4, V2", "adc a, V1",     "adc a, V1",     "adc a, (x)",    "adc a, (V1 + x)", "adc a, #V1",  "adc V1, V2",    "eor1 c, V1,V2",  "dec V1",        "dec V1",    "mov y, #V1", "pop psw",         "mov V1, #V2",
   "bcc V1", "tcall 9",  "clr1 V1,4", "bbc V1,4, V2", "adc a, V1 + x", "adc a, V1 + x", "adc a, V1 + y", "adc a, (V1) + y", "adc V1, #V2", "adc (x), (y)",  "subw ya, V1",    "dec V1 + x",    "dec a",     "mov x, sp",  "div ya, x",       "xcn a",
   "ei",     "tcall 10", "set1 V1,5", "bbs V1,5, V2", "sbc a, V1",     "sbc a, V1",     "sbc a, (x)",    "sbc a, (V1 + x)", "sbc a, #V1",  "sbc V1, V2",    "mov1 c, V1,V2",  "inc V1",        "inc V1",    "cmp y, #V1", "pop a",           "mov (x+), a",
   "bcs V1", "tcall 11", "clr1 V1,5", "bbc V1,5, V2", "sbc a, V1 + x", "sbc a, V1 + x", "sbc a, V1 + y", "sbc a, (V1) + y", "sbc V1, #V2", "sbc (x), (y)",  "movw ya, V1",    "inc V1 + x",    "inc a",     "mov sp, x",  "das a",           "mov a, (x+)",
@@ -184,7 +184,7 @@ export class Spc700Handler implements OpcodeHandler {
     if(opString.includes("V1")) {
       let replacement = "";
       switch(mode) {
-        case Am.IMM: replacement = hexStr(bytes[1]!, 8); break;
+        case Am.IMM: replacement = `$${hexStr(bytes[1]!, 8)}`; break;
         case Am.DPG: replacement = this.dis.getAdrRef(bytes[1]!, true); break;
         case Am.DPD: replacement = this.dis.getAdrRef(bytes[2]!, true); break;
         case Am.DPI: replacement = this.dis.getAdrRef(bytes[2]!, true); break;
@@ -202,7 +202,7 @@ export class Spc700Handler implements OpcodeHandler {
       let replacement = "";
       switch(mode) {
         case Am.DPD: replacement = this.dis.getAdrRef(bytes[1]!, true); break;
-        case Am.DPI: replacement = hexStr(bytes[1]!, 8); break;
+        case Am.DPI: replacement = `$${hexStr(bytes[1]!, 8)}`; break;
         case Am.DPR: replacement = this.dis.getAdrRef(this.getBranchTarget(pc, bytes[2]!, 3), false); break;
         case Am.ABB: replacement = `${asWord(bytes[1]!, bytes[2]!) >> 13}`; break;
       }

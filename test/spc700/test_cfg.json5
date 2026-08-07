@@ -1,0 +1,11 @@
+{
+  architecture: "spc700",
+  fileOffset: 0,
+  offset: 0x8000,
+  length: 0x1000,
+  nonRom: {s: 0x0, e: 0x7fff},
+  ramLabels: true,
+  addresses: [
+    {t: "pointers", adr: 0x8000, count: 7}
+  ]
+}

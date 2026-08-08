@@ -173,7 +173,6 @@ export class Spc700Handler implements OpcodeHandler {
     return true;
   }
 
-  // TODO: tests
   disassembleOpcode(pc: number, bytes: number[]): string[] {
     let opString = opcodeStrings[bytes[0]!]!;
     let mode = opcodeModes[bytes[0]!];

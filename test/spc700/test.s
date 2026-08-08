@@ -3,7 +3,7 @@
 .org $8000
 
 ptrs:
-  .dw start, start2, start3, start4, start5, start6, start7
+  .dw start, start2, start3, start4, start5, start6, start7, traceStart
 
 start:
 nop
@@ -326,6 +326,88 @@ cmp.a y, $12
 
 jmp start
 
+; tracing test
+
+dest1:
+  ret
+  .db $00
+dest2:
+  reti
+  .db $00
+dest3:
+  stop
+  .db $00
+dest4:
+  jmp ($1234 + x)
+  .db $00
+dest5:
+  ret
+  .db $00
+dest6:
+  ret
+  .db $00
+dest7:
+  ret
+  .db $00
+
+traceStart:
+  bpl dest1
+  bmi dest2
+  bvc dest3
+  bvs dest4
+  bcc dest5
+  bcs dest6
+  bne dest7
+  beq dest8
+  bbs $12,0, dest9
+  bbc $12,0, dest10
+  cbne $12, dest11
+  dbnz $12, dest12
+  cbne $12 + x, dest13
+  dbnz y, dest14
+  call dest15
+  call destSkip
+  .db $12
+  jmp .jmpDest1
+  .db $00
+.jmpDest1:
+  bra .jmpDest2
+  .db $00
+.jmpDest2:
+  call destEnd
+  .db $00
+
+dest8:
+  ret
+  .db $00
+dest9:
+  ret
+  .db $00
+dest10:
+  ret
+  .db $00
+dest11:
+  ret
+  .db $00
+dest12:
+  ret
+  .db $00
+dest13:
+  ret
+  .db $00
+dest14:
+  ret
+  .db $00
+dest15:
+  ret
+  .db $00
+
 .pad $8ff0
+destSkip:
+  ret
+  .db $00
+destEnd:
+  ret
+  .db $00
 
 .pad $9000
